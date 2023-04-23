@@ -1,10 +1,12 @@
-use bevy::{prelude::*, render::{mesh::Indices, render_resource::PrimitiveTopology}};
+use bevy::{prelude::*, render::{mesh::Indices, render_resource::PrimitiveTopology}, math::Vec4Swizzles};
 //use std::f32::consts::PI;
 
 use crate::track::components::*;
 
-pub const RAD_SUB:f32 = 0.1;    // max subdivision radial delta (ft)
-pub const ARC_SUB:f32 = 0.1;    // max subdivision arc length (ft)
+pub const RAD_SUB_MAX_LEN:f32 = 0.3;    // max subdivision radial delta (ft)
+pub const ARC_SUB_MAX_LEN:f32 = 0.3;    // max subdivision arc length (ft)
+pub const MAX_CURVATURE: f32 = 3.;
+pub const PI: f32 = 3.14159265358979323846264338327950288f32;
 
 
 // pub fn spawn_test_scene(
@@ -107,11 +109,45 @@ pub fn spawn_track_element(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mesh = corner_mesh(2., 180., 2.);
+
+    // 0 
+    let transform0 = Transform::IDENTITY;
+    
+    // 1
+    let mut mesh1 = Mesh::new(PrimitiveTopology::TriangleList);
+    let mut transform1 = Transform::IDENTITY;
+    let track1 = TrackElement2D{
+        curvature: 0.05,
+        curve_angle: 90.,
+        width: 5.,
+        length: 10.,
+    };
+
+    let result = track_mesh_2d(track1, &mut mesh1, &mut transform1);
+
+    // 2
+    let mut mesh2 = Mesh::new(PrimitiveTopology::TriangleList);
+    let mut transform2 = Transform::IDENTITY;
+    let track2 = TrackElement2D{
+        curvature: 0.,
+        curve_angle: 180.,
+        width: 5.,
+        length: 30.,
+    };
+
+    let result = track_mesh_2d(track2, &mut mesh2, &mut transform2);
 
     commands.spawn(PbrBundle {
-        mesh: meshes.add(mesh),
+        mesh: meshes.add(mesh1),
         material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        transform: transform0,
+        ..default()
+    });
+
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(mesh2),
+        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        transform: transform1,
         ..default()
     });
 
@@ -125,91 +161,132 @@ pub fn spawn_track_element(
         ..default()
     });
 
-    // commands.spawn(PbrBundle {
-    //     mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-    //     material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-    //     transform: Transform::from_translation(Vec3::new(0.0, 0.5, 0.0)),
-    //     ..Default::default()
-    // });
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+        transform: Transform::from_translation(Vec3::new(0.0, 0.5, 0.0)),
+        ..Default::default()
+    });
 
 }
 
-pub fn corner_mesh(inner_radius: f32, curve_angle: f32, track_width: f32) -> Mesh {
 
+
+
+/// 
+/// 
+pub fn track_mesh_2d(track: TrackElement2D, track_mesh: &mut Mesh, transform: &mut Transform) -> bool {
+    
+    // vectors that define mesh
     let mut indices = vec![];
     let mut positions = vec![]; 
     let mut normals = vec![];
-    let mut texture = vec![];
+    //let mut texture = vec![];
+
+    // check inner radius > min
+    if track.curvature > MAX_CURVATURE {return false;}    // curve is below min radius
+
+    // determine length
+    let length: f32;
+    if track.curvature == 0. {
+        // straight
+        length = track.length;
+    } else {
+        // curve
+        length = (2.* PI * track.curve_angle / 360. / track.curvature).abs(); 
+    }
     
-    let outer_radius = inner_radius + track_width;
-    let max_angle = (ARC_SUB/outer_radius).asin().to_degrees();                                 // max angle at curve center to maintain "ARC_SUB" at outermost vertices
-    //let num_arc_sub: u32 = (((curve_angle % max_angle) + max_angle) % max_angle + 1.) as u32;        // number of arc subdivisions required given "curve_angle" and "ARC_SUB"
+    // mesh density
+    //let num_arc_nodes = (length / ARC_SUB_MAX_LEN).ceil() as u32;
+    //let num_rad_nodes = (track.width / RAD_SUB_MAX_LEN).ceil() as u32;
 
-    //let num_rad_sub: u32 = (((track_width % RAD_SUB) + RAD_SUB) % RAD_SUB + 1.) as u32;              // number of radial subdivisions
+    let num_arc_nodes = 10;
+    let num_rad_nodes = 6;
 
-    let num_arc_sub = 10;
-    let num_rad_sub = 10;
-    
-    for i in 0..num_rad_sub {
-        
-        let rad_offset = i as f32 / num_rad_sub as f32 * track_width;
-        let h = inner_radius + rad_offset;
+    //
+    for curr_arc_node in 0..num_arc_nodes {
 
-        for j in 0..num_arc_sub {
+        let curr_length = curr_arc_node as f32 / num_arc_nodes as f32 * length;
 
-            let arc_offset = j as f32 / num_arc_sub as f32 * curve_angle;
+        arc_transform(transform, curr_length, track.curvature);
+        let matrix = transform.compute_matrix();
 
-            // define vertices
-            let new_point = Point {
+        for curr_rad_node in 0..num_rad_nodes {
 
-                // define position
-                p: Vec3::new(
-                    h * arc_offset.to_radians().cos(),
-                    h * arc_offset.to_radians().sin(),
-                    0. 
-                ),
+            let curr_width = curr_rad_node as f32 / num_rad_nodes as f32 * track.width - track.width / 2.;
+            
+            // define position
+            let p = Vec4::new(0., - curr_width, 0., 1.);
+            let p: Vec3 = (matrix * p).xyz();
 
-                // define normals
-                n: Vec3::new(0., 1., 0.),
+            // define normals
+            let n = Vec4:: new (0., 0., 1., 0.);
+            let n: Vec3 = (matrix * n).xyz();
 
-                // define uv
-                uv: Vec2::new(
-                    1. - ((j / num_arc_sub) as f32),
-                    (i / num_rad_sub) as f32
-                )
-
-            };
-
-            positions.push(new_point.p);
-            normals.push(new_point.n);
-            texture.push(new_point.uv);
+            positions.push(p);
+            normals.push(n);
 
             // define indices
-            if i < (num_rad_sub - 1) && j < (num_arc_sub - 1) {
-                
+            if curr_arc_node < (num_arc_nodes - 1) && curr_rad_node < (num_rad_nodes - 1) {
+
                 // first triangle
-                    indices.push((i + 1) * num_arc_sub + j);
-                    indices.push((i + 1) * num_arc_sub + j + 1 - num_arc_sub);
-                    indices.push((i + 1) * num_arc_sub + j - num_arc_sub);
+                indices.push((curr_arc_node + 1) * num_rad_nodes + curr_rad_node - num_rad_nodes);
+                indices.push((curr_arc_node + 1) * num_rad_nodes + curr_rad_node + 1 - num_rad_nodes);
+                indices.push((curr_arc_node + 1) * num_rad_nodes + curr_rad_node + 1);
 
                 // second triangle
-                    indices.push((i + 1) * num_arc_sub + j);
-                    indices.push((i + 1) * num_arc_sub + j + 1);
-                    indices.push((i + 1) * num_arc_sub + j + 1 - num_arc_sub);
+                indices.push((curr_arc_node + 1) * num_rad_nodes + curr_rad_node - num_rad_nodes);
+                indices.push((curr_arc_node + 1) * num_rad_nodes + curr_rad_node + 1);
+                indices.push((curr_arc_node + 1) * num_rad_nodes + curr_rad_node);
+
             }
 
         }
-    }
 
+    }
+    
     // define mesh
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-    mesh.set_indices(Some(Indices::U32(indices)));
-    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, texture);
-    mesh //return
+    //track_mesh = &Mesh::new(PrimitiveTopology::TriangleList);
+    track_mesh.set_indices(Some(Indices::U32(indices)));
+    track_mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+    track_mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+    //mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, texture);
+    true //return
 
 }
 
 
 
+fn arc_transform(transform: &mut Transform, curr_length: f32, curvature: f32) {
+
+
+    if curvature == 0. {
+        // straight
+        let translation = Transform::from_xyz(curr_length, 0., 0.);
+        *transform = Transform::IDENTITY * translation;
+
+    } else {
+        // curve
+        let theta = (curr_length * curvature).abs();
+
+        let x = theta.sin() / curvature;
+        let y = (1. - theta.cos()) / curvature;
+        let z = 0.;
+
+        let translation: Transform;
+        let rotation: Transform;
+
+        if curvature > 0. {
+            // left curve
+            translation = Transform::from_xyz(x, -y, z);
+            rotation = Transform::from_rotation(Quat::from_rotation_z(-theta));
+        } else {
+            // right curve
+            translation = Transform::from_xyz(x, y, z);
+            rotation = Transform::from_rotation(Quat::from_rotation_z(theta));
+        }
+
+        *transform = Transform::IDENTITY * translation * rotation;
+    }
+
+}
