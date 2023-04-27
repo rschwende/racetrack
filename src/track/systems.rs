@@ -7,6 +7,7 @@ pub const RAD_SUB_MAX_LEN:f32 = 0.3;    // max subdivision radial delta (ft)
 pub const ARC_SUB_MAX_LEN:f32 = 0.3;    // max subdivision arc length (ft)
 pub const MAX_CURVATURE: f32 = 3.;
 
+
 /// spawns a list of track elements
 pub fn spawn_track_element(
     mut commands: Commands,
@@ -34,7 +35,7 @@ pub fn spawn_track_element(
 
         // track element 3
         TrackElement2D{
-            curvature: -0.1,
+            curvature: 0.1,
             curve_angle: 180.,
             width: 8.,
             length: 10.,
@@ -142,7 +143,8 @@ pub fn track_mesh_2d(track: TrackElement2D, track_mesh: &mut Mesh, transform: &m
 
             // define normals
             let n = Vec4:: new (0., 0., 1., 1.);
-            let n: Vec3 = (matrix * n).xyz();
+            //let n: Vec3 = (matrix * n).xyz();
+            let n: Vec3 = n.xyz();
 
             positions.push(p);
             normals.push(n);
