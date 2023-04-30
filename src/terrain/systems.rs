@@ -9,7 +9,7 @@ use crate::GlobalState;
 pub const Y_SUB_MAX_LEN: f32 = 0.05;
 pub const X_SUB_MAX_LEN: f32 = 0.05;
 
-pub fn spawn_terrain_mesh(
+pub fn spawn_terrain(
     mut global_state: ResMut<GlobalState>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -113,8 +113,30 @@ pub fn terrain_mesh(global_state: &ResMut<GlobalState>, mesh: &mut Mesh) -> bool
     true //return
 }
 
-// pub fn update_state(
-//     mut global_state: ResMut<GlobalState>,
-//     material_query: Query<&mut StandardMaterial>,
-// ) {
-// }
+pub fn change_material(
+    global_state: ResMut<GlobalState>,
+    mut material_query: Query<&mut Handle<TerrainMaterial>>,
+    mut terrain_material: ResMut<Assets<TerrainMaterial>>,
+) {
+    let mut material = material_query
+        .get_single_mut()
+        .expect("Error: Could not find a single Terrain Material.");
+
+    let new_terrain = TerrainMaterial {
+        params: TerrainMaterialParams::new(&global_state),
+    };
+
+    *material = terrain_material.add(new_terrain);
+
+    // *material.params.noise_seed = 1.;
+    // material.params.frequency_scale = global_state.frequency_scale;
+    // material.params.amplitude_scale = global_state.amplitude_scale;
+    // material.params.octaves = global_state.octaves as u32;
+    // material.params.lacunarity = global_state.lacunarity;
+    // material.params.gain = global_state.gain;
+
+    // println!("frequency_scale: {}", material.params.frequency_scale);
+    // println!("amplitude_scale: {}", material.params.amplitude_scale);
+}
+
+//    if let Ok(mut material) = material_query.get_single_mut()

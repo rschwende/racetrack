@@ -23,7 +23,7 @@ pub struct TerrainMaterialParams {
     pub y_max: f32,
 }
 
-#[derive(AsBindGroup, TypeUuid, Debug, Clone)]
+#[derive(AsBindGroup, TypeUuid, Debug, Clone, Component)]
 #[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
 pub struct TerrainMaterial {
     #[uniform(0)]

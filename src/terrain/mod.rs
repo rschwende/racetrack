@@ -13,7 +13,7 @@ impl Plugin for TerrainPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(MaterialPlugin::<TerrainMaterial>::default())
             .add_plugin(NoisyShaderPlugin)
-            .add_startup_system(spawn_terrain_mesh);
-        //.add_system(update_state);
+            .add_startup_system(spawn_terrain)
+            .add_system(change_material);
     }
 }
