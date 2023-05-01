@@ -16,11 +16,6 @@ pub fn spawn_terrain(
     mut terrain_material: ResMut<Assets<TerrainMaterial>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    global_state.x_max = 5.;
-    global_state.x_min = -5.;
-    global_state.y_max = 5.;
-    global_state.y_min = -5.;
-
     let new_terrain = TerrainMaterial {
         params: TerrainMaterialParams::new(&global_state),
     };
@@ -127,16 +122,6 @@ pub fn change_material(
     };
 
     *material = terrain_material.add(new_terrain);
-
-    // *material.params.noise_seed = 1.;
-    // material.params.frequency_scale = global_state.frequency_scale;
-    // material.params.amplitude_scale = global_state.amplitude_scale;
-    // material.params.octaves = global_state.octaves as u32;
-    // material.params.lacunarity = global_state.lacunarity;
-    // material.params.gain = global_state.gain;
-
-    // println!("frequency_scale: {}", material.params.frequency_scale);
-    // println!("amplitude_scale: {}", material.params.amplitude_scale);
 }
 
 //    if let Ok(mut material) = material_query.get_single_mut()
