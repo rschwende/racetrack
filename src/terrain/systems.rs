@@ -8,6 +8,7 @@ use crate::GlobalState;
 
 pub const Y_SUB_MAX_LEN: f32 = 0.05;
 pub const X_SUB_MAX_LEN: f32 = 0.05;
+pub const DELTA: f32 = 0.01;
 
 pub fn spawn_terrain(
     mut global_state: ResMut<GlobalState>,
@@ -29,16 +30,22 @@ pub fn spawn_terrain(
         ..default()
     });
 
+    // commands.spawn(MaterialMeshBundle {
+    //     mesh: meshes.add(mesh),
+    //     material: materials.add(Color::rgb(1., 0.5, 0.5).into()),
+    //     ..default()
+    // });
+
     // lighting
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform::from_xyz(0.0, 0.0, 40.0),
-        ..default()
-    });
+    // commands.spawn(PointLightBundle {
+    //     point_light: PointLight {
+    //         intensity: 1500.0,
+    //         shadows_enabled: true,
+    //         ..default()
+    //     },
+    //     transform: Transform::from_xyz(0.0, 0.0, 40.0),
+    //     ..default()
+    // });
 
     // test cube
     commands.spawn(PbrBundle {
@@ -110,18 +117,42 @@ pub fn terrain_mesh(global_state: &ResMut<GlobalState>, mesh: &mut Mesh) -> bool
 
 pub fn change_material(
     global_state: ResMut<GlobalState>,
-    mut material_query: Query<&mut Handle<TerrainMaterial>>,
+    mut mesh_query: Query<&mut Handle<Mesh>>,
+    mut assets: ResMut<Assets<Mesh>>,
     mut terrain_material: ResMut<Assets<TerrainMaterial>>,
 ) {
-    let mut material = material_query
-        .get_single_mut()
-        .expect("Error: Could not find a single Terrain Material.");
+    if let Ok(handle) = mesh_query.get_single_mut() {
+        let mut mesh = assets.get_mut(&handle);
+        if mesh.is_some() {
+            let positions = mesh.unwrap().attribute(Mesh::ATTRIBUTE_POSITION).unwrap();
+            let normals = mesh.unwrap().attribute(Mesh::ATTRIBUTE_NORMAL).unwrap();
 
-    let new_terrain = TerrainMaterial {
-        params: TerrainMaterialParams::new(&global_state),
-    };
+            for vertex in positions {}
 
-    *material = terrain_material.add(new_terrain);
+            // let mut new_positions = vec![];
+            // let mut new_normals = vec![];
+
+            // let y_north = positions[1] + DELTA;
+            // let y_south = positions.y - DELTA;
+
+            // let x_west = positions.x - DELTA;
+            // let x_east = positions.x + DELTA;
+
+            // // X & Y positions for noise
+            // let p = vec2<f32>(vertex.position.x, vertex.position.y);
+            // let p_west = vec2<f32>(x_west, vertex.position.y);
+            // let p_east = vec2<f32>(x_east, vertex.position.y);
+            // let p_north = vec2<f32>(vertex.position.x, y_north);
+            // let p_south = vec2<f32>(vertex.position.x, y_south);
+
+            // // // Z height from noise
+            // let z = z_height(p, params);
+            // let z_west = z_height(p_west, params);
+            // let z_east = z_height(p_east, params);
+            // let z_north = z_height(p_north, params);
+            // let z_south = z_height(p_south, params);
+
+            //     mesh.unwrap().insert_attribute(Mesh::ATTRIBUTE_POSITION, temporary);
+        }
+    }
 }
-
-//    if let Ok(mut material) = material_query.get_single_mut()

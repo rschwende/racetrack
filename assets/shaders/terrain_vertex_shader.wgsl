@@ -76,7 +76,8 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     let stangent = vec3<f32>(2. * delta * (params.x_max - params.x_min), 0., z_east - z_west);
     let ttangent = vec3<f32>(0., 2. * delta * (params.y_max - params.y_min), z_north - z_south);
 
-    let n = vec3<f32>(cross(stangent, ttangent));
+    let n = normalize(vec3<f32>(cross(stangent, ttangent)));
+    //let n = vec3<f32>(0., 0., -1.);
 
     out.world_normal = mesh_normal_local_to_world(n);
 
@@ -85,3 +86,5 @@ fn vertex(vertex: Vertex) -> VertexOutput {
 
     return out;
 }
+
+
