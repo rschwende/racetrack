@@ -97,13 +97,25 @@ pub fn spawn_track_element(
     }
 
     // lighting
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
+    // directional 'sun' light
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            shadows_enabled: false,
             ..default()
         },
-        transform: Transform::from_xyz(0.0, 0.0, 40.0),
+        transform: Transform {
+            translation: Vec3::new(0.0, 0.0, 40.0),
+            ..default()
+        },
+        // // The default cascade config is designed to handle large scenes.
+        // // As this example has a much smaller world, we can tighten the shadow
+        // // bounds for better visual quality.
+        // cascade_shadow_config: CascadeShadowConfigBuilder {
+        //     first_cascade_far_bound: 4.0,
+        //     maximum_distance: 10.0,
+        //     ..default()
+        // }
+        // .into(),
         ..default()
     });
 
