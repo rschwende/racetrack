@@ -3,32 +3,53 @@ use bevy::{
     render::{mesh::Indices, render_resource::PrimitiveTopology},
 };
 
+use noisy_bevy::fbm_simplex_2d_seeded;
+
 use crate::terrain::components::*;
 use crate::GlobalState;
 
-pub const Y_SUB_MAX_LEN: f32 = 0.05;
-pub const X_SUB_MAX_LEN: f32 = 0.05;
-pub const DELTA: f32 = 0.01;
+pub const Y_SUB_MAX_LEN: f32 = 2.;
+pub const X_SUB_MAX_LEN: f32 = 2.;
+pub const DELTA: f32 = 0.1;
 
 pub fn spawn_terrain(
     mut global_state: ResMut<GlobalState>,
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut terrain_material: ResMut<Assets<TerrainMaterial>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut mesh_assets: ResMut<Assets<Mesh>>,
+    //mut terrain_material: ResMut<Assets<TerrainMaterial>>,
+    mut material_assets: ResMut<Assets<StandardMaterial>>,
 ) {
-    let new_terrain = TerrainMaterial {
-        params: TerrainMaterialParams::new(&global_state),
+    let mut terrain_mesh = Mesh::new(PrimitiveTopology::TriangleList);
+    build_terrain_mesh(&global_state, &mut terrain_mesh);
+
+    let material_mesh = MaterialMeshBundle {
+        mesh: mesh_assets.add(terrain_mesh),
+        material: material_assets.add(StandardMaterial {
+            base_color: Color::hex("#ffd891").unwrap(),
+            metallic: 0.0,
+            perceptual_roughness: 0.5,
+            ..default()
+        }),
+        ..default()
     };
 
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-    terrain_mesh(&global_state, &mut mesh);
-
-    commands.spawn(MaterialMeshBundle {
-        mesh: meshes.add(mesh),
-        material: terrain_material.add(new_terrain),
-        ..default()
+    // setup terrain bundle for identification by query
+    commands.spawn(TerrainBundle {
+        marker: Terrain,
+        matmesh: material_mesh,
     });
+
+    // // create the mesh
+    // terrain_mesh(&global_state, &mut new_terrain.);
+
+    // // let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+    // // terrain_mesh(&global_state, &mut mesh);
+
+    // commands.spawn(MaterialMeshBundle {
+    //     mesh: meshes.add(new_terrain.mesh),
+    //     material: terrain_material.add(new_terrain.material),
+    //     ..default()
+    // });
 
     // commands.spawn(MaterialMeshBundle {
     //     mesh: meshes.add(mesh),
@@ -47,16 +68,16 @@ pub fn spawn_terrain(
     //     ..default()
     // });
 
-    // test cube
+    //test cube
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+        mesh: mesh_assets.add(Mesh::from(shape::Cube { size: 1.0 })),
+        material: material_assets.add(Color::rgb(0.8, 0.7, 0.6).into()),
         transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
         ..Default::default()
     });
 }
 
-pub fn terrain_mesh(global_state: &ResMut<GlobalState>, mesh: &mut Mesh) -> bool {
+pub fn build_terrain_mesh(global_state: &ResMut<GlobalState>, mesh: &mut Mesh) -> bool {
     // vectors that define mesh
     let mut indices = vec![];
     let mut positions = vec![];
@@ -115,44 +136,106 @@ pub fn terrain_mesh(global_state: &ResMut<GlobalState>, mesh: &mut Mesh) -> bool
     true //return
 }
 
+fn z_height(p: Vec2, global_state: &ResMut<GlobalState>) -> f32 {
+    let z = fbm_simplex_2d_seeded(
+        p * global_state.frequency_scale,
+        global_state.octaves,
+        global_state.lacunarity,
+        global_state.gain,
+        1.,
+    ) * global_state.amplitude_scale;
+    return z;
+}
+
 pub fn change_material(
     global_state: ResMut<GlobalState>,
-    mut mesh_query: Query<&mut Handle<Mesh>>,
-    mut assets: ResMut<Assets<Mesh>>,
-    mut terrain_material: ResMut<Assets<TerrainMaterial>>,
+    mut mesh_query: Query<(Entity, &Handle<Mesh>, &Handle<StandardMaterial>), With<Terrain>>,
+    mut mesh_asset: ResMut<Assets<Mesh>>,
+    //mut mat_asset: Assets<StandardMaterial>,
+    //mut terrain_material: ResMut<Assets<TerrainMaterial>>,
 ) {
-    if let Ok(handle) = mesh_query.get_single_mut() {
-        let mut mesh = assets.get_mut(&handle);
-        if mesh.is_some() {
-            let positions = mesh.unwrap().attribute(Mesh::ATTRIBUTE_POSITION).unwrap();
-            let normals = mesh.unwrap().attribute(Mesh::ATTRIBUTE_NORMAL).unwrap();
+    //println!("here1");
 
-            for vertex in positions {}
+    let empty = mesh_query.iter().count();
 
-            // let mut new_positions = vec![];
-            // let mut new_normals = vec![];
+    //println!("{}", empty);
 
-            // let y_north = positions[1] + DELTA;
-            // let y_south = positions.y - DELTA;
+    let (_id, mesh_handle, mat_handle) = mesh_query.get_single().unwrap();
 
-            // let x_west = positions.x - DELTA;
-            // let x_east = positions.x + DELTA;
+    let mesh = mesh_asset.get_mut(mesh_handle).unwrap();
+    //let material = mat_asset.get(mat_handle).unwrap();
 
-            // // X & Y positions for noise
-            // let p = vec2<f32>(vertex.position.x, vertex.position.y);
-            // let p_west = vec2<f32>(x_west, vertex.position.y);
-            // let p_east = vec2<f32>(x_east, vertex.position.y);
-            // let p_north = vec2<f32>(vertex.position.x, y_north);
-            // let p_south = vec2<f32>(vertex.position.x, y_south);
+    // if let Ok(handle) = mesh_query.get_single() {
+    //     let mut mesh = assets.get_mut(handle).unwrap();
+    //     println!("here2");
+    // }
 
-            // // // Z height from noise
-            // let z = z_height(p, params);
-            // let z_west = z_height(p_west, params);
-            // let z_east = z_height(p_east, params);
-            // let z_north = z_height(p_north, params);
-            // let z_south = z_height(p_south, params);
+    // println!("here2");
 
-            //     mesh.unwrap().insert_attribute(Mesh::ATTRIBUTE_POSITION, temporary);
-        }
+    let positions = mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap().clone();
+    //let normals = mesh.attribute(Mesh::ATTRIBUTE_NORMAL).unwrap();
+
+    let positions_vec = positions.as_float3().unwrap();
+    //let normals_vec = normals.as_float3().unwrap();
+
+    let mut new_positions = vec![];
+    let mut new_normals = vec![];
+
+    for vertex in positions_vec {
+        let y_north = vertex[1] + DELTA;
+        let y_south = vertex[1] - DELTA;
+
+        let x_west = vertex[0] - DELTA;
+        let x_east = vertex[0] + DELTA;
+
+        // X & Y positions for noise
+        let p = Vec2::new(vertex[0], vertex[1]);
+        let p_west = Vec2::new(x_west, vertex[1]);
+        let p_east = Vec2::new(x_east, vertex[1]);
+        let p_north = Vec2::new(vertex[0], y_north);
+        let p_south = Vec2::new(vertex[0], y_south);
+
+        // println!("p: {:?}", p);
+        // println!("p_north: {:?}", p_north);
+        // println!("p_south: {:?}", p_south);
+        // println!("p_east: {:?}", p_east);
+        // println!("p_west: {:?}", p_west);
+
+        // Z height from noise
+        let z = z_height(p, &global_state);
+        let z_west = z_height(p_west, &global_state);
+        let z_east = z_height(p_east, &global_state);
+        let z_north = z_height(p_north, &global_state);
+        let z_south = z_height(p_south, &global_state);
+
+        // println!("z: {:?}", z);
+        // println!("z_north: {:?}", z_north);
+        // println!("z_south: {:?}", z_south);
+        // println!("z_east: {:?}", z_east);
+        // println!("z_west: {:?}", z_west);
+
+        // define position
+        new_positions.push(Vec3::new(vertex[0], vertex[1], z));
+
+        // define normals
+        let stangent = Vec3::new(2. * DELTA, 0., z_east - z_west);
+        let ttangent = Vec3::new(0., 2. * DELTA, z_north - z_south);
+
+        new_normals.push((stangent.cross(ttangent)).normalize());
+
+        // println!("stangent: {:?}", stangent);
+        // println!("ttangent: {:?}", ttangent);
+        // println!("cross: {:?}", stangent.cross(ttangent));
+        // println!("normalize: {:?}", (stangent.cross(ttangent)).normalize());
     }
+
+    //println!("{:?}", new_normals);
+
+    // remove current attributes
+    mesh.remove_attribute(Mesh::ATTRIBUTE_POSITION);
+    mesh.remove_attribute(Mesh::ATTRIBUTE_NORMAL);
+
+    // add new attributes
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, new_positions);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, new_normals);
 }

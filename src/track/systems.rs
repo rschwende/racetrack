@@ -24,7 +24,7 @@ pub fn spawn_track_element(
     let track_list = vec![
         // track element 1
         TrackElement2D {
-            curvature: 0.1,
+            curvature: 0.05,
             curve_angle: 90.,
             width: 8.,
             length: 10.,
@@ -38,7 +38,7 @@ pub fn spawn_track_element(
         },
         // track element 3
         TrackElement2D {
-            curvature: 0.1,
+            curvature: 0.05,
             curve_angle: 180.,
             width: 8.,
             length: 10.,
@@ -52,7 +52,7 @@ pub fn spawn_track_element(
         },
         // track element 5
         TrackElement2D {
-            curvature: 0.1,
+            curvature: 0.05,
             curve_angle: 90.,
             width: 8.,
             length: 20.,
@@ -96,35 +96,46 @@ pub fn spawn_track_element(
         }
     }
 
-    // directional 'sun' light
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
+    // //directional 'sun' light
+    // commands.spawn(DirectionalLightBundle {
+    //     directional_light: DirectionalLight {
+    //         shadows_enabled: false,
+    //         ..default()
+    //     },
+    //     transform: Transform {
+    //         translation: Vec3::new(40.0, 40.0, 40.0),
+    //         ..default()
+    //     },
+    //     // // The default cascade config is designed to handle large scenes.
+    //     // // As this example has a much smaller world, we can tighten the shadow
+    //     // // bounds for better visual quality.
+    //     // cascade_shadow_config: CascadeShadowConfigBuilder {
+    //     //     first_cascade_far_bound: 4.0,
+    //     //     maximum_distance: 10.0,
+    //     //     ..default()
+    //     // }
+    //     // .into(),
+    //     ..default()
+    // });
+
+    commands.spawn(PointLightBundle {
+        transform: Transform::from_xyz(50.0, 50.0, 50.0),
+        point_light: PointLight {
+            intensity: 1200000.,
+            range: 100.,
             shadows_enabled: false,
             ..default()
         },
-        transform: Transform {
-            translation: Vec3::new(0.0, 0.0, 40.0),
-            ..default()
-        },
-        // // The default cascade config is designed to handle large scenes.
-        // // As this example has a much smaller world, we can tighten the shadow
-        // // bounds for better visual quality.
-        // cascade_shadow_config: CascadeShadowConfigBuilder {
-        //     first_cascade_far_bound: 4.0,
-        //     maximum_distance: 10.0,
-        //     ..default()
-        // }
-        // .into(),
         ..default()
     });
 
-    // // test cube
-    // commands.spawn(PbrBundle {
-    //     mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-    //     material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-    //     transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-    //     ..Default::default()
-    // });
+    // test cube
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+        ..Default::default()
+    });
 }
 
 /// creates track element mesh in passed mesh and passed transform ends as start position of

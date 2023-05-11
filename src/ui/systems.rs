@@ -27,7 +27,7 @@ pub fn ui_example_system(
             ui.allocate_space(egui::Vec2::new(1.0, 10.0));
 
             ui.add(
-                egui::Slider::new(&mut global_state.frequency_scale, 0.0..=0.2)
+                egui::Slider::new(&mut global_state.frequency_scale, 0.0..=0.025)
                     .text("Frequency Scale"),
             );
             ui.add(
