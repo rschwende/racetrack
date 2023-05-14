@@ -1,4 +1,7 @@
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    render::{Extract, RenderApp, RenderSet},
+};
 
 pub mod components;
 mod systems;
@@ -14,6 +17,6 @@ impl Plugin for TerrainPlugin {
         app.add_plugin(MaterialPlugin::<TerrainMaterial>::default())
             .add_plugin(NoisyShaderPlugin)
             .add_startup_system(spawn_terrain)
-            .add_system(change_material);
+            .add_system(update_noise_params);
     }
 }

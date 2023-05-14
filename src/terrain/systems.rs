@@ -10,42 +10,35 @@ pub const Y_SUB_MAX_LEN: f32 = 0.05;
 pub const X_SUB_MAX_LEN: f32 = 0.05;
 
 pub fn spawn_terrain(
-    mut global_state: ResMut<GlobalState>,
+    global_state: ResMut<GlobalState>,
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut terrain_material: ResMut<Assets<TerrainMaterial>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut mesh_assets: ResMut<Assets<Mesh>>,
+    mut terrain_material_asset: ResMut<Assets<TerrainMaterial>>,
+    mut material_asset: ResMut<Assets<StandardMaterial>>,
 ) {
-    let new_terrain = TerrainMaterial {
-        params: TerrainMaterialParams::new(&global_state),
+    // create terrain material
+    let terrain = TerrainMaterial {
+        color: Color::rgb(1.0, 1.0, 0.5),
+        noise_params: NoiseParams::new(&global_state),
     };
 
+    // create mesh
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
     terrain_mesh(&global_state, &mut mesh);
 
+    // spawn mesh
     commands.spawn(MaterialMeshBundle {
-        mesh: meshes.add(mesh),
-        material: terrain_material.add(new_terrain),
-        ..default()
-    });
-
-    // lighting
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform::from_xyz(0.0, 0.0, 40.0),
+        mesh: mesh_assets.add(mesh),
+        material: terrain_material_asset.add(terrain),
         ..default()
     });
 
     // test cube
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+        mesh: mesh_assets.add(Mesh::from(shape::Cube { size: 1.0 })),
+        material: material_asset.add(Color::rgb(0.8, 0.7, 0.6).into()),
         transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-        ..Default::default()
+        ..default()
     });
 }
 
@@ -108,20 +101,14 @@ pub fn terrain_mesh(global_state: &ResMut<GlobalState>, mesh: &mut Mesh) -> bool
     true //return
 }
 
-pub fn change_material(
+// update noise parameters of Terrain Material to global state
+pub fn update_noise_params(
     global_state: ResMut<GlobalState>,
-    mut material_query: Query<&mut Handle<TerrainMaterial>>,
-    mut terrain_material: ResMut<Assets<TerrainMaterial>>,
+    material_query: Query<(Entity, &Handle<TerrainMaterial>)>,
+    mut terrain_material_asset: ResMut<Assets<TerrainMaterial>>,
 ) {
-    let mut material = material_query
-        .get_single_mut()
-        .expect("Error: Could not find a single Terrain Material.");
+    let (_id, mat_handle) = material_query.get_single().unwrap();
+    let material = terrain_material_asset.get_mut(mat_handle).unwrap();
 
-    let new_terrain = TerrainMaterial {
-        params: TerrainMaterialParams::new(&global_state),
-    };
-
-    *material = terrain_material.add(new_terrain);
+    material.noise_params.update(&global_state);
 }
-
-//    if let Ok(mut material) = material_query.get_single_mut()
