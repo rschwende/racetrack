@@ -18,7 +18,9 @@ pub fn spawn_terrain(
 ) {
     // create terrain material
     let terrain = TerrainMaterial {
-        color: Color::rgb(1.0, 1.0, 0.5),
+        material_params: MaterialParams {
+            base_color: Color::rgb(1.0, 0.0, 0.0),
+        },
         noise_params: NoiseParams::new(&global_state),
     };
 
@@ -110,5 +112,5 @@ pub fn update_noise_params(
     let (_id, mat_handle) = material_query.get_single().unwrap();
     let material = terrain_material_asset.get_mut(mat_handle).unwrap();
 
-    material.noise_params.update(&global_state);
+    material.noise_params = NoiseParams::new(&global_state);
 }

@@ -9,7 +9,7 @@ use bevy::{
 
 use crate::GlobalState;
 
-// information that will be sent to Render World
+// noise parameters
 #[derive(Component, Clone, ExtractComponent, ShaderType)]
 pub struct NoiseParams {
     pub noise_seed: f32,
@@ -61,12 +61,30 @@ impl NoiseParams {
     }
 }
 
+// material parameters
+#[derive(Component, Clone, ExtractComponent, ShaderType)]
+pub struct MaterialParams {
+    pub base_color: Color,
+    //pub base_color_texture: Option<Handle<Image>>,
+    //pub perceptional_roughness: f32,
+    //pub metallic: u32,
+}
+
+impl MaterialParams {
+    // constructor
+    pub fn new() -> MaterialParams {
+        MaterialParams {
+            base_color: Color::rgb(1.0, 1.0, 0.5),
+        }
+    }
+}
+
 // Material that will be used on terrain plane
 #[derive(AsBindGroup, TypeUuid, Clone)]
 #[uuid = "f690fdae-d598-45ab-8225-97e2a3f056e0"]
 pub struct TerrainMaterial {
     #[uniform(0)]
-    pub color: Color,
+    pub material_params: MaterialParams,
     #[uniform(1)]
     pub noise_params: NoiseParams,
 }

@@ -16,28 +16,28 @@
 
 #import noisy_bevy::prelude
 
-// struct NoiseParams {
-//     noise_seed: f32,
-//     frequency_scale: f32,
-//     amplitude_scale: f32,
-//     octaves: i32,
-//     lacunarity: f32,
-//     gain: f32,
+struct NoiseParams {
+    noise_seed: f32,
+    frequency_scale: f32,
+    amplitude_scale: f32,
+    octaves: i32,
+    lacunarity: f32,
+    gain: f32,
 
-//     x_min: f32,
-//     x_max: f32,
-//     y_min: f32,
-//     y_max: f32,
-// };
+    x_min: f32,
+    x_max: f32,
+    y_min: f32,
+    y_max: f32,
+};
 
-// struct TerrainMaterial {
-//     color: vec4<f32>,
-// }
+struct MaterialParams {
+    base_color: vec4<f32>,
+};
 
-// @group(1) @binding(0)
-// var<uniform> terrain_material: Material;
-// @group(1) @binding(1)
-// var<uniform> params: NoiseParams;
+@group(1) @binding(0)
+var<uniform> material_params: MaterialParams;
+@group(1) @binding(1)
+var<uniform> noise_params: NoiseParams;
 
 // vertex structs copied from bevy_pbr/src/render/mesh.wgsl
 struct Vertex {
@@ -74,101 +74,119 @@ struct FragmentInput {
     #import bevy_pbr::mesh_vertex_output
 }
 
-// fn z_height(p: vec2<f32>, params: NoiseParams) -> f32 {
-
-//     let z = fbm_simplex_2d_seeded(p * params.frequency_scale, params.octaves, params.lacunarity, params.gain, params.noise_seed) * params.amplitude_scale;
-//     return z;
-// }
-
+fn z_height(p: vec2<f32>, noise_params: NoiseParams) -> f32 {
+    let z = fbm_simplex_2d_seeded(p * noise_params.frequency_scale, noise_params.octaves, noise_params.lacunarity, noise_params.gain, noise_params.noise_seed) * noise_params.amplitude_scale;
+    return z;
+}
 
 
-// @vertex
-// fn vertex(vertex: Vertex) -> VertexOutput {
-//     var out: VertexOutput;
 
-//     let delta = 0.01;
-
-//     let y_north = vertex.position.y + delta;
-//     let y_south = vertex.position.y - delta;
-
-//     let x_west = vertex.position.x - delta;
-//     let x_east = vertex.position.x + delta;
-
-//     // X & Y positions for noise
-//     let p = vec2<f32>(vertex.position.x, vertex.position.y);
-//     let p_west = vec2<f32>(x_west, vertex.position.y);
-//     let p_east = vec2<f32>(x_east, vertex.position.y);
-//     let p_north = vec2<f32>(vertex.position.x, y_north);
-//     let p_south = vec2<f32>(vertex.position.x, y_south);
-
-//     // // Z height from noise
-//     let z = z_height(p, params);
-//     let z_west = z_height(p_west, params);
-//     let z_east = z_height(p_east, params);
-//     let z_north = z_height(p_north, params);
-//     let z_south = z_height(p_south, params);
-
-//     //define position
-//     out.world_position = mesh_position_local_to_world(mesh.model, vec4<f32>(vertex.position.x, vertex.position.y, z, 1.0));
-//     out.clip_position = mesh_position_world_to_clip(out.world_position);
-
-//     // define normals
-//     let stangent = vec3<f32>(2. * delta * (params.x_max - params.x_min), 0., z_east - z_west);
-//     let ttangent = vec3<f32>(0., 2. * delta * (params.y_max - params.y_min), z_north - z_south);
-
-//     //let n = vec3<f32>(cross(stangent, ttangent));
-//     let n = vec3<f32>(0., 0., -1.);
-
-//     out.world_normal = mesh_normal_local_to_world(n);
-
-//     // define texture coordinates
-//     out.uv = vertex.uv;
-
-//     return out;
-// }
-
-// fragment stuff
-
-// vertex shader copied from bevy_pbr/src/render/mesh.wgsl
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
     var out: VertexOutput;
 
-#ifdef SKINNED
+    let delta = 0.01;
+
+    let y_north = vertex.position.y + delta;
+    let y_south = vertex.position.y - delta;
+
+    let x_west = vertex.position.x - delta;
+    let x_east = vertex.position.x + delta;
+
+    // X & Y positions for noise
+    let p = vec2<f32>(vertex.position.x, vertex.position.y);
+    let p_west = vec2<f32>(x_west, vertex.position.y);
+    let p_east = vec2<f32>(x_east, vertex.position.y);
+    let p_north = vec2<f32>(vertex.position.x, y_north);
+    let p_south = vec2<f32>(vertex.position.x, y_south);
+
+    // // Z height from noise
+    let z = z_height(p, noise_params);
+    let z_west = z_height(p_west, noise_params);
+    let z_east = z_height(p_east, noise_params);
+    let z_north = z_height(p_north, noise_params);
+    let z_south = z_height(p_south, noise_params);
+
+    // define normals
+    let stangent = vec3<f32>(2. * delta, 0., z_east - z_west);
+    let ttangent = vec3<f32>(0., 2. * delta, z_north - z_south);
+
+    let n = vec3<f32>(cross(stangent, ttangent));
+
+    // adapted from bevy_pbr/src/render/mesh.wgsl
+    #ifdef SKINNED
     var model = skin_model(vertex.joint_indices, vertex.joint_weights);
-#else
+    #else
     var model = mesh.model;
-#endif
+    #endif
 
-#ifdef VERTEX_NORMALS
-#ifdef SKINNED
+    #ifdef VERTEX_NORMALS
+    #ifdef SKINNED
     out.world_normal = skin_normals(model, vertex.normal);
-#else
-    out.world_normal = mesh_normal_local_to_world(vertex.normal);
-#endif
-#endif
+    #else
+    out.world_normal = mesh_normal_local_to_world(n);
+    #endif
+    #endif
 
-#ifdef VERTEX_POSITIONS
-    out.world_position = mesh_position_local_to_world(model, vec4<f32>(vertex.position, 1.0));
+    #ifdef VERTEX_POSITIONS
+    out.world_position = mesh_position_local_to_world(model, vec4<f32>(vertex.position.x, vertex.position.y, z, 1.0));
     out.clip_position = mesh_position_world_to_clip(out.world_position);
-#endif
+    #endif
 
-#ifdef VERTEX_UVS
+    #ifdef VERTEX_UVS
     out.uv = vertex.uv;
-#endif
+    #endif
 
-#ifdef VERTEX_TANGENTS
+    #ifdef VERTEX_TANGENTS
     out.world_tangent = mesh_tangent_local_to_world(model, vertex.tangent);
-#endif
+    #endif
 
-#ifdef VERTEX_COLORS
-    //out.color = vertex.color;
-    //temp output color
-    out.color = vec4(1. , 1. , 0.5, 1.);
-#endif
+    #ifdef VERTEX_COLORS
+    out.color = vertex.color;
+    #endif
 
     return out;
 }
+
+
+// // vertex shader copied from bevy_pbr/src/render/mesh.wgsl
+// @vertex
+// fn vertex(vertex: Vertex) -> VertexOutput {
+//     var out: VertexOutput;
+
+// #ifdef SKINNED
+//     var model = skin_model(vertex.joint_indices, vertex.joint_weights);
+// #else
+//     var model = mesh.model;
+// #endif
+
+// #ifdef VERTEX_NORMALS
+// #ifdef SKINNED
+//     out.world_normal = skin_normals(model, vertex.normal);
+// #else
+//     out.world_normal = mesh_normal_local_to_world(vertex.normal);
+// #endif
+// #endif
+
+// #ifdef VERTEX_POSITIONS
+//     out.world_position = mesh_position_local_to_world(model, vec4<f32>(vertex.position, 1.0));
+//     out.clip_position = mesh_position_world_to_clip(out.world_position);
+// #endif
+
+// #ifdef VERTEX_UVS
+//     out.uv = vertex.uv;
+// #endif
+
+// #ifdef VERTEX_TANGENTS
+//     out.world_tangent = mesh_tangent_local_to_world(model, vertex.tangent);
+// #endif
+
+// #ifdef VERTEX_COLORS
+//     out.color = vertex.color;
+// #endif
+
+//     return out;
+// }
 
 @fragment
 fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
@@ -178,9 +196,8 @@ fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
     var material = standard_material_new();
 
     // set material parameters from Terrain Material Uniforms
-    material.perceptual_roughness = 1.0;
-
-
+    //material.perceptual_roughness = 1.0;
+    material.base_color = material_params.base_color;
 
     var pbr_input = pbr_input_new();
     pbr_input.frag_coord = in.frag_coord;
