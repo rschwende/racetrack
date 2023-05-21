@@ -70,35 +70,6 @@ pub fn create_track_list(
         length: 20.,
     };
     track_resource.track_list.push(track_element);
-
-    // -----------------------------------------------------------------------------
-
-    let size = Extent3d {
-        width: 1024,
-        height: 1024,
-        ..default()
-    };
-
-    // This is the texture that will be rendered to.
-    let image = Image {
-        texture_descriptor: TextureDescriptor {
-            label: None,
-            size,
-            dimension: TextureDimension::D2,
-            format: TextureFormat::Bgra8UnormSrgb,
-            mip_level_count: 1,
-            sample_count: 1,
-            usage: TextureUsages::TEXTURE_BINDING
-                | TextureUsages::COPY_DST
-                | TextureUsages::RENDER_ATTACHMENT,
-            view_formats: &[],
-        },
-        ..default()
-    };
-
-    track_resource.track_texture_image_handle = image;
-
-    // -------------------------------------------------------------------------------
 }
 
 /// spawns track elements
@@ -108,6 +79,7 @@ pub fn spawn_track(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut global_resource: ResMut<GlobalResource>,
     track_resource: Res<TrackResource>,
+    mut mesh_resource: ResMut<MeshResource>,
 ) {
     let mut prev_transform = Transform::IDENTITY;
 
@@ -117,8 +89,14 @@ pub fn spawn_track(
         let mut new_transform = Transform::IDENTITY;
         track_mesh_2d(&track_element, &mut mesh, &mut new_transform);
 
+        let mesh_handle = meshes.add(mesh);
+
+        // store values to be used in render to texture pass
+        mesh_resource.track_mesh_list.push(mesh_handle.clone());
+        mesh_resource.track_mesh_transform_list.push(prev_transform);
+
         commands.spawn(PbrBundle {
-            mesh: meshes.add(mesh),
+            mesh: mesh_handle.clone(),
             material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
             transform: prev_transform,
             ..default()

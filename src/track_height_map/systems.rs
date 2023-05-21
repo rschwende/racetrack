@@ -12,7 +12,7 @@ use bevy::window::PrimaryWindow;
 
 use crate::components::*;
 
-fn create_height_map(
+pub fn create_height_map(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -20,16 +20,27 @@ fn create_height_map(
     mut images: ResMut<Assets<Image>>,
     mut global_resource: ResMut<GlobalResource>,
     mut track_resource: ResMut<TrackResource>,
+    mut mesh_resource: ResMut<MeshResource>,
 ) {
-    let window = window_query.get_single().unwrap();
+    // position
+    let quad_size = Vec2::new(
+        global_resource.x_max - global_resource.x_min,
+        global_resource.y_max - global_resource.y_min,
+    );
 
+    let quad_center = Vec2::new(
+        quad_size.x / 2. + global_resource.x_min,
+        quad_size.y / 2. + global_resource.y_min,
+    );
+
+    // texture size
     let size = Extent3d {
         width: 1024,
         height: 1024,
         ..default()
     };
 
-    // This is the texture that will be rendered to.
+    // texture image
     let mut image = Image {
         texture_descriptor: TextureDescriptor {
             label: None,
@@ -46,6 +57,83 @@ fn create_height_map(
         ..default()
     };
 
-    // fill image.data with zeroes
     image.resize(size);
+    let image_handle = images.add(image);
+    let first_pass_layer = RenderLayers::layer(1);
+
+    // camera for render to texture pass
+    commands.spawn((
+        Camera3dBundle {
+            camera_3d: Camera3d {
+                clear_color: ClearColorConfig::Custom(Color::WHITE),
+                ..default()
+            },
+            camera: Camera {
+                // render before the "main pass" camera
+                order: -1,
+                target: RenderTarget::Image(image_handle.clone()),
+                ..default()
+            },
+            transform: Transform::from_translation(Vec3::new(quad_center.x, quad_center.y, 10.0))
+                .looking_at(Vec3::new(quad_center.x, quad_center.y, 0.0), Vec3::Y),
+            projection: OrthographicProjection {
+                near: -15.0,
+                scaling_mode: ScalingMode::Fixed {
+                    width: quad_size.x,
+                    height: quad_size.y,
+                },
+                ..default()
+            }
+            .into(),
+            ..default()
+        },
+        first_pass_layer,
+    ));
+
+    let track_material_handle = materials.add(StandardMaterial {
+        base_color: Color::rgb(1.0, 0.0, 0.0),
+        ..default()
+    });
+
+    for (mesh_handle, transform) in mesh_resource
+        .track_mesh_list
+        .iter()
+        .zip(mesh_resource.track_mesh_transform_list.iter())
+    {
+        commands.spawn((
+            PbrBundle {
+                mesh: mesh_handle.clone(),
+                material: track_material_handle.clone(),
+                transform: *transform,
+                ..default()
+            },
+            RenderToTexturePass,
+            first_pass_layer,
+        ));
+    }
+
+    // plane for render to texture pass
+    let plane_handle = meshes.add(Mesh::from(shape::Quad {
+        size: quad_size,
+        ..default()
+    }));
+
+    // This material has the texture that has been rendered.
+    let material_handle = materials.add(StandardMaterial {
+        base_color_texture: Some(image_handle),
+        ..default()
+    });
+
+    // Main pass plane, with material containing the rendered first pass texture.
+    commands.spawn((
+        PbrBundle {
+            mesh: plane_handle,
+            material: material_handle,
+            transform: Transform::from_xyz(quad_center.x, quad_center.y, 0.0),
+            ..default()
+        },
+        TestPass,
+    ));
+
+    //track_resource.track_texture_image_handle = image;
 }

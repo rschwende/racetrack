@@ -42,6 +42,12 @@ pub struct TrackResource {
     pub track_texture_image_handle: Image,
 }
 
+#[derive(Resource, Default)]
+pub struct MeshResource {
+    pub track_mesh_list: Vec<Handle<Mesh>>,
+    pub track_mesh_transform_list: Vec<Transform>,
+}
+
 #[derive(Component)]
 pub struct TrackElement2D {
     pub curvature: f32,
@@ -52,12 +58,15 @@ pub struct TrackElement2D {
 
 //
 #[derive(Component)]
-struct TrackRenderPass;
+pub struct TrackRenderPass;
 
 //
 #[derive(Component)]
-struct RenderToTexturePass;
+pub struct RenderToTexturePass;
+
+#[derive(Component)]
+pub struct TestPass;
 
 //
 #[derive(Component)]
-struct TerrainPass;
+pub struct TerrainPass;
