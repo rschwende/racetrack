@@ -9,6 +9,7 @@ pub struct TrackPlugin;
 
 impl Plugin for TrackPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(spawn_track_element);
+        app.add_startup_system(create_track_list)
+            .add_startup_system(spawn_track);
     }
 }

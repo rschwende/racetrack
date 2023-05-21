@@ -1,7 +1,11 @@
+use std::vec;
+
 use bevy::prelude::*;
 
-#[derive(Default, Resource)]
-pub struct GlobalState {
+pub const TERRAIN_OFFSET: f32 = 25.; // how much the terrain extends past track
+
+#[derive(Resource, Default)]
+pub struct GlobalResource {
     // terrain parameters
     pub frequency_scale: f32,
     pub amplitude_scale: f32,
@@ -15,3 +19,45 @@ pub struct GlobalState {
     pub y_min: f32,
     pub y_max: f32,
 }
+
+// impl FromWorld for GlobalResource {
+//     fn from_world(world: &mut World) -> Self {
+//         GlobalResource {
+//             frequency_scale: 0.0,
+//             amplitude_scale: 0.0,
+//             octaves: 0,
+//             lacunarity: 0.0,
+//             gain: 0.0,
+//             x_min: -TERRAIN_OFFSET,
+//             x_max: TERRAIN_OFFSET,
+//             y_min: -TERRAIN_OFFSET,
+//             y_max: TERRAIN_OFFSET,
+//         }
+//     }
+// }
+
+#[derive(Resource, Default)]
+pub struct TrackResource {
+    pub track_list: Vec<TrackElement2D>,
+    pub track_texture_image_handle: Image,
+}
+
+#[derive(Component)]
+pub struct TrackElement2D {
+    pub curvature: f32,
+    pub curve_angle: f32,
+    pub width: f32,
+    pub length: f32,
+}
+
+//
+#[derive(Component)]
+struct TrackRenderPass;
+
+//
+#[derive(Component)]
+struct RenderToTexturePass;
+
+//
+#[derive(Component)]
+struct TerrainPass;

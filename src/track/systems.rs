@@ -1,71 +1,121 @@
 use bevy::{
     math::Vec4Swizzles,
     prelude::*,
-    render::{mesh::Indices, render_resource::PrimitiveTopology},
+    render::{
+        mesh::Indices,
+        render_resource::{
+            Extent3d, PrimitiveTopology, TextureDescriptor, TextureDimension, TextureFormat,
+            TextureUsages,
+        },
+    },
 };
 
-use crate::track::components::*;
-use crate::GlobalState;
+use crate::components::*;
 use std::f32::consts::PI;
 
+// track params
 pub const RAD_SUB_MAX_LEN: f32 = 0.3; // max subdivision radial delta (ft)
 pub const ARC_SUB_MAX_LEN: f32 = 0.3; // max subdivision arc length (ft)
 pub const MAX_CURVATURE: f32 = 3.;
-pub const TERRAIN_OFFSET: f32 = 50.; // how much the terrain extends past track
+pub const TERRAIN_OFFSET: f32 = 25.; // how much the terrain extends past track
 
-/// spawns a list of track elements
-pub fn spawn_track_element(
+// this will be replaced by a UI
+pub fn create_track_list(
+    mut track_resource: ResMut<TrackResource>,
+    mut images: ResMut<Assets<Image>>,
+) {
+    // list track elements below
+
+    // track element 1
+    let track_element = TrackElement2D {
+        curvature: 0.1,
+        curve_angle: 90.,
+        width: 8.,
+        length: 10.,
+    };
+    track_resource.track_list.push(track_element);
+
+    // track element 2
+    let track_element = TrackElement2D {
+        curvature: 0.,
+        curve_angle: 90.,
+        width: 8.,
+        length: 20.,
+    };
+    track_resource.track_list.push(track_element);
+
+    // track element 3
+    let track_element = TrackElement2D {
+        curvature: 0.1,
+        curve_angle: 180.,
+        width: 8.,
+        length: 10.,
+    };
+    track_resource.track_list.push(track_element);
+
+    // track element 4
+    let track_element = TrackElement2D {
+        curvature: 0.,
+        curve_angle: 90.,
+        width: 8.,
+        length: 20.,
+    };
+    track_resource.track_list.push(track_element);
+
+    // track element 5
+    let track_element = TrackElement2D {
+        curvature: 0.1,
+        curve_angle: 90.,
+        width: 8.,
+        length: 20.,
+    };
+    track_resource.track_list.push(track_element);
+
+    // -----------------------------------------------------------------------------
+
+    let size = Extent3d {
+        width: 1024,
+        height: 1024,
+        ..default()
+    };
+
+    // This is the texture that will be rendered to.
+    let image = Image {
+        texture_descriptor: TextureDescriptor {
+            label: None,
+            size,
+            dimension: TextureDimension::D2,
+            format: TextureFormat::Bgra8UnormSrgb,
+            mip_level_count: 1,
+            sample_count: 1,
+            usage: TextureUsages::TEXTURE_BINDING
+                | TextureUsages::COPY_DST
+                | TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        },
+        ..default()
+    };
+
+    track_resource.track_texture_image_handle = image;
+
+    // -------------------------------------------------------------------------------
+}
+
+/// spawns track elements
+pub fn spawn_track(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut global_state: ResMut<GlobalState>,
+    mut global_resource: ResMut<GlobalResource>,
+    track_resource: Res<TrackResource>,
 ) {
-    // list of track elements
-    let track_list = vec![
-        // track element 1
-        TrackElement2D {
-            curvature: 0.1,
-            curve_angle: 90.,
-            width: 8.,
-            length: 10.,
-        },
-        // track element 2
-        TrackElement2D {
-            curvature: 0.,
-            curve_angle: 90.,
-            width: 8.,
-            length: 20.,
-        },
-        // track element 3
-        TrackElement2D {
-            curvature: 0.1,
-            curve_angle: 180.,
-            width: 8.,
-            length: 10.,
-        },
-        // track element 4
-        TrackElement2D {
-            curvature: 0.,
-            curve_angle: 90.,
-            width: 8.,
-            length: 20.,
-        },
-        // track element 5
-        TrackElement2D {
-            curvature: 0.1,
-            curve_angle: 90.,
-            width: 8.,
-            length: 20.,
-        },
-    ];
-
     let mut prev_transform = Transform::IDENTITY;
 
     // iterate through track list, spawn to scene, and update track extent
-    for track in track_list {
+    for track_element in &track_resource.track_list {
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
         let mut new_transform = Transform::IDENTITY;
-        track_mesh_2d(track, &mut mesh, &mut new_transform);
+        track_mesh_2d(&track_element, &mut mesh, &mut new_transform);
 
         commands.spawn(PbrBundle {
             mesh: meshes.add(mesh),
@@ -76,23 +126,23 @@ pub fn spawn_track_element(
 
         prev_transform = prev_transform * new_transform;
 
-        // update track extent
+        // update track extent (terrain plane size)
         let p: Vec3 = (prev_transform.compute_matrix() * Vec4::new(0., 0., 0., 1.)).xyz();
 
-        if p.x + TERRAIN_OFFSET > global_state.x_max {
-            global_state.x_max = p.x + TERRAIN_OFFSET;
+        if p.x + TERRAIN_OFFSET > global_resource.x_max {
+            global_resource.x_max = p.x + TERRAIN_OFFSET;
         }
 
-        if p.x - TERRAIN_OFFSET < global_state.x_min {
-            global_state.x_min = p.x - TERRAIN_OFFSET;
+        if p.x - TERRAIN_OFFSET < global_resource.x_min {
+            global_resource.x_min = p.x - TERRAIN_OFFSET;
         }
 
-        if p.y + TERRAIN_OFFSET > global_state.y_max {
-            global_state.y_max = p.y + TERRAIN_OFFSET;
+        if p.y + TERRAIN_OFFSET > global_resource.y_max {
+            global_resource.y_max = p.y + TERRAIN_OFFSET;
         }
 
-        if p.y - TERRAIN_OFFSET < global_state.y_min {
-            global_state.y_min = p.y - TERRAIN_OFFSET;
+        if p.y - TERRAIN_OFFSET < global_resource.y_min {
+            global_resource.y_min = p.y - TERRAIN_OFFSET;
         }
     }
 
@@ -142,7 +192,7 @@ pub fn spawn_track_element(
 /// creates track element mesh in passed mesh and passed transform ends as start position of
 /// next track element
 pub fn track_mesh_2d(
-    track: TrackElement2D,
+    track: &TrackElement2D,
     track_mesh: &mut Mesh,
     transform: &mut Transform,
 ) -> bool {

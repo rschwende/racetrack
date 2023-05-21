@@ -2,6 +2,7 @@ pub mod camera;
 pub mod terrain;
 pub mod tools;
 pub mod track;
+pub mod track_height_map;
 pub mod ui;
 
 pub mod components;
@@ -14,6 +15,7 @@ use camera::CameraPlugin;
 use terrain::TerrainPlugin;
 //use tools::ToolsPlugin;
 use track::TrackPlugin;
+use track_height_map::TrackHeightMapPlugin;
 use ui::UIPlugin;
 
 use bevy::prelude::*;
@@ -22,12 +24,13 @@ use bevy::prelude::*;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .init_resource::<GlobalState>()
+        .init_resource::<GlobalResource>()
+        .init_resource::<TrackResource>()
+        .add_startup_system(set_global_resource)
         .add_plugin(CameraPlugin)
         .add_plugin(TrackPlugin)
         //.add_plugin(ToolsPlugin)
         .add_plugin(TerrainPlugin)
         .add_plugin(UIPlugin)
-        .add_startup_system(set_global_state)
         .run();
 }

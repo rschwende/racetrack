@@ -1,10 +1,9 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, reflect::TypeUuid};
 
-#[derive(Component)]
-pub struct TrackElement2D {
-    pub curvature: f32,
-    pub curve_angle: f32,
-    pub width: f32,
-    pub length: f32,
-}
-
+// #[derive(Component)]
+// pub struct TrackElement2D {
+//     pub curvature: f32,
+//     pub curve_angle: f32,
+//     pub width: f32,
+//     pub length: f32,
+// }

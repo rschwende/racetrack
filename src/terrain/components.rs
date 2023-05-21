@@ -7,7 +7,7 @@ use bevy::{
     },
 };
 
-use crate::GlobalState;
+use crate::GlobalResource;
 
 // noise parameters
 #[derive(Component, Clone, ExtractComponent, ShaderType)]
@@ -27,38 +27,38 @@ pub struct NoiseParams {
 
 impl NoiseParams {
     // constructor
-    pub fn new(global_state: &ResMut<GlobalState>) -> NoiseParams {
+    pub fn new(global_resource: &ResMut<GlobalResource>) -> NoiseParams {
         NoiseParams {
             noise_seed: 1.,
-            frequency_scale: global_state.frequency_scale,
-            amplitude_scale: global_state.amplitude_scale,
-            octaves: global_state.octaves as u32,
-            lacunarity: global_state.lacunarity,
-            gain: global_state.gain,
+            frequency_scale: global_resource.frequency_scale,
+            amplitude_scale: global_resource.amplitude_scale,
+            octaves: global_resource.octaves as u32,
+            lacunarity: global_resource.lacunarity,
+            gain: global_resource.gain,
 
-            x_min: global_state.x_min,
-            x_max: global_state.x_max,
-            y_min: global_state.y_min,
-            y_max: global_state.y_max,
+            x_min: global_resource.x_min,
+            x_max: global_resource.x_max,
+            y_min: global_resource.y_min,
+            y_max: global_resource.y_max,
         }
     }
 
-    // method to update struct to current global state
-    pub fn update(&mut self, global_state: &ResMut<GlobalState>) {
-        NoiseParams {
-            noise_seed: 1.,
-            frequency_scale: global_state.frequency_scale,
-            amplitude_scale: global_state.amplitude_scale,
-            octaves: global_state.octaves as u32,
-            lacunarity: global_state.lacunarity,
-            gain: global_state.gain,
+    // // method to update struct to current global state
+    // pub fn update(global_resource: &ResMut<GlobalResource>) {
+    //     NoiseParams {
+    //         noise_seed: 1.,
+    //         frequency_scale: global_resource.frequency_scale,
+    //         amplitude_scale: global_resource.amplitude_scale,
+    //         octaves: global_resource.octaves as u32,
+    //         lacunarity: global_resource.lacunarity,
+    //         gain: global_resource.gain,
 
-            x_min: global_state.x_min,
-            x_max: global_state.x_max,
-            y_min: global_state.y_min,
-            y_max: global_state.y_max,
-        };
-    }
+    //         x_min: global_resource.x_min,
+    //         x_max: global_resource.x_max,
+    //         y_min: global_resource.y_min,
+    //         y_max: global_resource.y_max,
+    //     };
+    // }
 }
 
 // material parameters

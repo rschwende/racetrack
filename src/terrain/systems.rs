@@ -4,13 +4,13 @@ use bevy::{
 };
 
 use crate::terrain::components::*;
-use crate::GlobalState;
+use crate::GlobalResource;
 
 pub const Y_SUB_MAX_LEN: f32 = 0.05;
 pub const X_SUB_MAX_LEN: f32 = 0.05;
 
 pub fn spawn_terrain(
-    global_state: ResMut<GlobalState>,
+    global_resource: ResMut<GlobalResource>,
     mut commands: Commands,
     mut mesh_assets: ResMut<Assets<Mesh>>,
     mut terrain_material_asset: ResMut<Assets<TerrainMaterial>>,
@@ -21,12 +21,12 @@ pub fn spawn_terrain(
         material_params: MaterialParams {
             base_color: Color::rgb(1.0, 0.0, 0.0),
         },
-        noise_params: NoiseParams::new(&global_state),
+        noise_params: NoiseParams::new(&global_resource),
     };
 
     // create mesh
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-    terrain_mesh(&global_state, &mut mesh);
+    terrain_mesh(&global_resource, &mut mesh);
 
     // spawn mesh
     commands.spawn(MaterialMeshBundle {
@@ -44,7 +44,7 @@ pub fn spawn_terrain(
     });
 }
 
-pub fn terrain_mesh(global_state: &ResMut<GlobalState>, mesh: &mut Mesh) -> bool {
+pub fn terrain_mesh(global_resource: &ResMut<GlobalResource>, mesh: &mut Mesh) -> bool {
     // vectors that define mesh
     let mut indices = vec![];
     let mut positions = vec![];
@@ -52,17 +52,21 @@ pub fn terrain_mesh(global_state: &ResMut<GlobalState>, mesh: &mut Mesh) -> bool
     let mut texture = vec![];
 
     // mesh density
-    let num_y_nodes = ((global_state.y_max - global_state.y_min) / Y_SUB_MAX_LEN).ceil() as u32;
-    let num_x_nodes = ((global_state.x_max - global_state.x_min) / X_SUB_MAX_LEN).ceil() as u32;
+    let num_y_nodes =
+        ((global_resource.y_max - global_resource.y_min) / Y_SUB_MAX_LEN).ceil() as u32;
+    let num_x_nodes =
+        ((global_resource.x_max - global_resource.x_min) / X_SUB_MAX_LEN).ceil() as u32;
 
     // define vertices
     for y_node in 0..num_y_nodes {
-        let y = y_node as f32 / num_y_nodes as f32 * (global_state.y_max - global_state.y_min)
-            + global_state.y_min;
+        let y = y_node as f32 / num_y_nodes as f32
+            * (global_resource.y_max - global_resource.y_min)
+            + global_resource.y_min;
 
         for x_node in 0..num_x_nodes {
-            let x = x_node as f32 / num_x_nodes as f32 * (global_state.x_max - global_state.x_min)
-                + global_state.x_min;
+            let x = x_node as f32 / num_x_nodes as f32
+                * (global_resource.x_max - global_resource.x_min)
+                + global_resource.x_min;
 
             // define position
             let p = Vec3::new(x, y, 0.);
@@ -105,12 +109,12 @@ pub fn terrain_mesh(global_state: &ResMut<GlobalState>, mesh: &mut Mesh) -> bool
 
 // update noise parameters of Terrain Material to global state
 pub fn update_noise_params(
-    global_state: ResMut<GlobalState>,
+    global_resource: ResMut<GlobalResource>,
     material_query: Query<(Entity, &Handle<TerrainMaterial>)>,
     mut terrain_material_asset: ResMut<Assets<TerrainMaterial>>,
 ) {
     let (_id, mat_handle) = material_query.get_single().unwrap();
     let material = terrain_material_asset.get_mut(mat_handle).unwrap();
 
-    material.noise_params = NoiseParams::new(&global_state);
+    material.noise_params = NoiseParams::new(&global_resource);
 }
