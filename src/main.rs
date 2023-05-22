@@ -30,8 +30,8 @@ fn main() {
         .add_startup_system(set_global_resource)
         .add_plugin(CameraPlugin)
         .add_plugin(TrackPlugin)
-        .add_plugin(TrackHeightMapPlugin)
-        .add_plugin(TerrainPlugin)
+        //.add_plugin(TrackHeightMapPlugin)
+        //.add_plugin(TerrainPlugin)
         .add_plugin(UIPlugin)
         .run();
 }

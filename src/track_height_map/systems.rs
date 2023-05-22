@@ -91,7 +91,8 @@ pub fn create_height_map(
     ));
 
     let track_material_handle = materials.add(StandardMaterial {
-        base_color: Color::rgb(1.0, 0.0, 0.0),
+        base_color: Color::rgb(1.0, 1.0, 1.0),
+        unlit: true,
         ..default()
     });
 
@@ -121,6 +122,7 @@ pub fn create_height_map(
     // This material has the texture that has been rendered.
     let material_handle = materials.add(StandardMaterial {
         base_color_texture: Some(image_handle),
+        unlit: true,
         ..default()
     });
 

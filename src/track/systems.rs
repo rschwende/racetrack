@@ -19,6 +19,10 @@ pub const ARC_SUB_MAX_LEN: f32 = 0.3; // max subdivision arc length (ft)
 pub const MAX_CURVATURE: f32 = 3.;
 pub const TERRAIN_OFFSET: f32 = 25.; // how much the terrain extends past track
 
+// track to terrain blending parameters
+pub const TRANSITION_WIDTH: f32 = 5.;
+pub const TRANS_RAD_SUB_MAX_LEN: f32 = 0.25;
+
 // this will be replaced by a UI
 pub fn create_track_list(
     mut track_resource: ResMut<TrackResource>,
@@ -83,6 +87,12 @@ pub fn spawn_track(
 ) {
     let mut prev_transform = Transform::IDENTITY;
 
+    let track_material_handle = materials.add(StandardMaterial {
+        base_color: Color::rgb(1.0, 1.0, 1.0),
+        unlit: true,
+        ..default()
+    });
+
     // iterate through track list, spawn to scene, and update track extent
     for track_element in &track_resource.track_list {
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
@@ -97,7 +107,7 @@ pub fn spawn_track(
 
         commands.spawn(PbrBundle {
             mesh: mesh_handle.clone(),
-            material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+            material: track_material_handle.clone(),
             transform: prev_transform,
             ..default()
         });
@@ -123,48 +133,6 @@ pub fn spawn_track(
             global_resource.y_min = p.y - TERRAIN_OFFSET;
         }
     }
-
-    // // lighting
-    // // directional 'sun' light
-    // commands.spawn(DirectionalLightBundle {
-    //     directional_light: DirectionalLight {
-    //         shadows_enabled: false,
-    //         ..default()
-    //     },
-    //     transform: Transform {
-    //         translation: Vec3::new(0.0, 0.0, 40.0),
-    //         ..default()
-    //     },
-    //     // // The default cascade config is designed to handle large scenes.
-    //     // // As this example has a much smaller world, we can tighten the shadow
-    //     // // bounds for better visual quality.
-    //     // cascade_shadow_config: CascadeShadowConfigBuilder {
-    //     //     first_cascade_far_bound: 4.0,
-    //     //     maximum_distance: 10.0,
-    //     //     ..default()
-    //     // }
-    //     // .into(),
-    //     ..default()
-    // });
-
-    commands.spawn(PointLightBundle {
-        transform: Transform::from_xyz(50.0, 50.0, 50.0),
-        point_light: PointLight {
-            intensity: 1200000.,
-            range: 100.,
-            shadows_enabled: false,
-            ..default()
-        },
-        ..default()
-    });
-
-    // test cube
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-        ..Default::default()
-    });
 }
 
 /// creates track element mesh in passed mesh and passed transform ends as start position of
@@ -179,6 +147,7 @@ pub fn track_mesh_2d(
     let mut positions = vec![];
     let mut normals = vec![];
     //let mut texture = vec![];
+    let mut colors = vec![];
 
     // check inner radius > min
     if track.curvature > MAX_CURVATURE {
@@ -198,6 +167,12 @@ pub fn track_mesh_2d(
     // mesh density
     let num_arc_nodes = (length / ARC_SUB_MAX_LEN).ceil() as u32;
     let num_rad_nodes = (track.width / RAD_SUB_MAX_LEN).ceil() as u32;
+    // number of transition nodes at edge of track width
+    let num_trans_nodes = (TRANSITION_WIDTH / TRANS_RAD_SUB_MAX_LEN).ceil() as u32;
+
+    let total_rad_nodes = num_rad_nodes + 2 * num_trans_nodes - 2;
+
+    let total_width = track.width + 2. * TRANSITION_WIDTH;
 
     // define vertices
     for curr_arc_node in 0..num_arc_nodes {
@@ -206,9 +181,45 @@ pub fn track_mesh_2d(
         arc_transform(transform, curr_length, track.curvature);
         let matrix = transform.compute_matrix();
 
-        for curr_rad_node in 0..num_rad_nodes {
-            let curr_width =
-                curr_rad_node as f32 / num_rad_nodes as f32 * track.width - track.width / 2.;
+        let mut curr_width: f32;
+        let mut vertex_color: f32;
+
+        for curr_rad_node in 0..total_rad_nodes {
+            // -Y transition zone
+            if curr_rad_node < (num_trans_nodes - 1) {
+                // define position
+                curr_width = curr_rad_node as f32 / (num_trans_nodes - 1) as f32 * TRANSITION_WIDTH
+                    - total_width / 2.;
+
+                // define color
+                vertex_color = 1. - curr_rad_node as f32 / (num_trans_nodes - 1) as f32;
+
+            // +_Y transition zone
+            } else if curr_rad_node > (num_trans_nodes + num_rad_nodes - 2) {
+                // define position
+                curr_width = (curr_rad_node - (num_trans_nodes + num_rad_nodes - 2)) as f32
+                    / (num_trans_nodes - 1) as f32
+                    * TRANSITION_WIDTH
+                    + track.width
+                    + TRANSITION_WIDTH
+                    - total_width / 2.;
+
+                // define color
+                vertex_color = (curr_rad_node - (num_trans_nodes + num_rad_nodes - 2)) as f32
+                    / (num_trans_nodes - 1) as f32;
+
+            // track
+            } else {
+                // define position
+                curr_width = ((curr_rad_node - (num_trans_nodes - 1)) as f32
+                    / (num_rad_nodes - 1) as f32)
+                    * track.width
+                    + TRANSITION_WIDTH
+                    - total_width / 2.;
+
+                // define color
+                vertex_color = 0.;
+            }
 
             // define position
             let p = Vec4::new(0., -curr_width, 0., 1.);
@@ -219,21 +230,28 @@ pub fn track_mesh_2d(
             //let n: Vec3 = (matrix * n).xyz();
             let n: Vec3 = n.xyz();
 
+            // define colors
+            let c = Vec4::new(vertex_color, vertex_color, vertex_color, 1.);
+
             positions.push(p);
             normals.push(n);
+            colors.push(c);
 
             // define indices
-            if curr_arc_node < (num_arc_nodes - 1) && curr_rad_node < (num_rad_nodes - 1) {
+            if curr_arc_node < (num_arc_nodes - 1) && curr_rad_node < (total_rad_nodes - 1) {
                 // first triangle
-                indices.push((curr_arc_node + 1) * num_rad_nodes + curr_rad_node - num_rad_nodes);
                 indices
-                    .push((curr_arc_node + 1) * num_rad_nodes + curr_rad_node + 1 - num_rad_nodes);
-                indices.push((curr_arc_node + 1) * num_rad_nodes + curr_rad_node + 1);
+                    .push((curr_arc_node + 1) * total_rad_nodes + curr_rad_node - total_rad_nodes);
+                indices.push(
+                    (curr_arc_node + 1) * total_rad_nodes + curr_rad_node + 1 - total_rad_nodes,
+                );
+                indices.push((curr_arc_node + 1) * total_rad_nodes + curr_rad_node + 1);
 
                 // second triangle
-                indices.push((curr_arc_node + 1) * num_rad_nodes + curr_rad_node - num_rad_nodes);
-                indices.push((curr_arc_node + 1) * num_rad_nodes + curr_rad_node + 1);
-                indices.push((curr_arc_node + 1) * num_rad_nodes + curr_rad_node);
+                indices
+                    .push((curr_arc_node + 1) * total_rad_nodes + curr_rad_node - total_rad_nodes);
+                indices.push((curr_arc_node + 1) * total_rad_nodes + curr_rad_node + 1);
+                indices.push((curr_arc_node + 1) * total_rad_nodes + curr_rad_node);
             }
         }
     }
@@ -243,6 +261,7 @@ pub fn track_mesh_2d(
     track_mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     track_mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     //mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, texture);
+    track_mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
     true //return
 }
 
