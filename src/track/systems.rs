@@ -105,12 +105,12 @@ pub fn spawn_track(
         mesh_resource.track_mesh_list.push(mesh_handle.clone());
         mesh_resource.track_mesh_transform_list.push(prev_transform);
 
-        commands.spawn(PbrBundle {
-            mesh: mesh_handle.clone(),
-            material: track_material_handle.clone(),
-            transform: prev_transform,
-            ..default()
-        });
+        // commands.spawn(PbrBundle {
+        //     mesh: mesh_handle.clone(),
+        //     material: track_material_handle.clone(),
+        //     transform: prev_transform,
+        //     ..default()
+        // });
 
         prev_transform = prev_transform * new_transform;
 
@@ -133,6 +133,16 @@ pub fn spawn_track(
             global_resource.y_min = p.y - TERRAIN_OFFSET;
         }
     }
+
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance: 20000.,
+            shadows_enabled: false,
+            ..default()
+        },
+        transform: Transform::from_xyz(0., 0., 50.0),
+        ..default()
+    });
 }
 
 /// creates track element mesh in passed mesh and passed transform ends as start position of

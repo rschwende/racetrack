@@ -121,21 +121,21 @@ pub fn create_height_map(
 
     // This material has the texture that has been rendered.
     let material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(image_handle),
+        base_color_texture: Some(image_handle.clone()),
         unlit: true,
         ..default()
     });
 
-    // Main pass plane, with material containing the rendered first pass texture.
-    commands.spawn((
-        PbrBundle {
-            mesh: plane_handle,
-            material: material_handle,
-            transform: Transform::from_xyz(quad_center.x, quad_center.y, 0.0),
-            ..default()
-        },
-        TestPass,
-    ));
+    // //Main pass plane, with material containing the rendered first pass texture.
+    // commands.spawn((
+    //     PbrBundle {
+    //         mesh: plane_handle,
+    //         material: material_handle,
+    //         transform: Transform::from_xyz(quad_center.x, quad_center.y, 0.0),
+    //         ..default()
+    //     },
+    //     TestPass,
+    // ));
 
-    //track_resource.track_texture_image_handle = image;
+    track_resource.track_texture_image_handle = image_handle.clone();
 }

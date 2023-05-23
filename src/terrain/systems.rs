@@ -3,18 +3,20 @@ use bevy::{
     render::{mesh::Indices, render_resource::PrimitiveTopology},
 };
 
+use crate::components::*;
 use crate::terrain::components::*;
-use crate::GlobalResource;
 
 pub const Y_SUB_MAX_LEN: f32 = 0.05;
 pub const X_SUB_MAX_LEN: f32 = 0.05;
 
 pub fn spawn_terrain(
     global_resource: ResMut<GlobalResource>,
+    track_resource: Res<TrackResource>,
     mut commands: Commands,
     mut mesh_assets: ResMut<Assets<Mesh>>,
     mut terrain_material_asset: ResMut<Assets<TerrainMaterial>>,
     mut material_asset: ResMut<Assets<StandardMaterial>>,
+    mut images: ResMut<Assets<Image>>,
 ) {
     // create terrain material
     let terrain = TerrainMaterial {
@@ -22,6 +24,7 @@ pub fn spawn_terrain(
             base_color: Color::rgb(1.0, 0.0, 0.0),
         },
         noise_params: NoiseParams::new(&global_resource),
+        track_image: track_resource.track_texture_image_handle.clone(),
     };
 
     // create mesh

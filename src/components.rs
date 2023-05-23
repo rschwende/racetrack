@@ -39,7 +39,7 @@ pub struct GlobalResource {
 #[derive(Resource, Default)]
 pub struct TrackResource {
     pub track_list: Vec<TrackElement2D>,
-    pub track_texture_image_handle: Image,
+    pub track_texture_image_handle: Handle<Image>,
 }
 
 #[derive(Resource, Default)]

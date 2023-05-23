@@ -38,6 +38,10 @@ struct MaterialParams {
 var<uniform> material_params: MaterialParams;
 @group(1) @binding(1)
 var<uniform> noise_params: NoiseParams;
+@group(1) @binding(2)
+var texture: texture_2d<f32>;
+@group(1) @binding(3)
+var texture_sampler: sampler;
 
 // vertex structs copied from bevy_pbr/src/render/mesh.wgsl
 struct Vertex {
@@ -85,6 +89,8 @@ fn z_height(p: vec2<f32>, noise_params: NoiseParams) -> f32 {
 fn vertex(vertex: Vertex) -> VertexOutput {
     var out: VertexOutput;
 
+    let texture_color = textureSampleLevel(texture, texture_sampler, vertex.uv, 0.);
+
     let delta = 0.01;
 
     let y_north = vertex.position.y + delta;
@@ -101,17 +107,24 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     let p_south = vec2<f32>(vertex.position.x, y_south);
 
     // // Z height from noise
-    let z = z_height(p, noise_params);
-    let z_west = z_height(p_west, noise_params);
-    let z_east = z_height(p_east, noise_params);
-    let z_north = z_height(p_north, noise_params);
-    let z_south = z_height(p_south, noise_params);
 
-    // define normals
-    let stangent = vec3<f32>(2. * delta, 0., z_east - z_west);
-    let ttangent = vec3<f32>(0., 2. * delta, z_north - z_south);
+    var z = texture_color[1];
+    var n = vec3<f32>(0., 0., 1.);
 
-    let n = vec3<f32>(cross(stangent, ttangent));
+    if texture_color[0] > 0.1 {
+
+        z = z_height(p, noise_params);
+        let z_west = z_height(p_west, noise_params);
+        let z_east = z_height(p_east, noise_params);
+        let z_north = z_height(p_north, noise_params);
+        let z_south = z_height(p_south, noise_params);
+
+        // define normals
+        let stangent = vec3<f32>(2. * delta, 0., z_east - z_west);
+        let ttangent = vec3<f32>(0., 2. * delta, z_north - z_south);
+
+        n = vec3<f32>(cross(stangent, ttangent));
+    };
 
     // adapted from bevy_pbr/src/render/mesh.wgsl
     #ifdef SKINNED
@@ -197,7 +210,20 @@ fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
 
     // set material parameters from Terrain Material Uniforms
     //material.perceptual_roughness = 1.0;
-    material.base_color = material_params.base_color;
+    material.base_color = textureSample(texture, texture_sampler, in.uv);
+    //let baseColor = textureSample(texture, texture_sampler, in.uv);
+    //material.unlit = false;
+
+    //material.base_color = vec4<f32>(in.uv[0], in.uv[1], 0., 1.);
+
+    if (in.uv[0] > 1.) {
+        material.base_color = vec4<f32>(0., 0., 0., 1.);
+    }
+
+    if (in.uv[1] > 1.) {
+        material.base_color = vec4<f32>(0., 0., 0., 1.);
+    }
+
 
     var pbr_input = pbr_input_new();
     pbr_input.frag_coord = in.frag_coord;

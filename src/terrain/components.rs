@@ -74,7 +74,7 @@ impl MaterialParams {
     // constructor
     pub fn new() -> MaterialParams {
         MaterialParams {
-            base_color: Color::rgb(1.0, 1.0, 0.5),
+            base_color: Color::rgb(1.0, 0.5, 0.5),
         }
     }
 }
@@ -87,6 +87,9 @@ pub struct TerrainMaterial {
     pub material_params: MaterialParams,
     #[uniform(1)]
     pub noise_params: NoiseParams,
+    #[texture(2)]
+    #[sampler(3)]
+    pub track_image: Handle<Image>,
 }
 
 impl Material for TerrainMaterial {
