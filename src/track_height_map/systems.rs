@@ -46,7 +46,7 @@ pub fn create_height_map(
             label: None,
             size,
             dimension: TextureDimension::D2,
-            format: TextureFormat::Bgra8UnormSrgb,
+            format: TextureFormat::Rgba32Float,
             mip_level_count: 1,
             sample_count: 1,
             usage: TextureUsages::TEXTURE_BINDING
@@ -91,7 +91,7 @@ pub fn create_height_map(
     ));
 
     let track_material_handle = materials.add(StandardMaterial {
-        base_color: Color::rgb(1.0, 1.0, 1.0),
+        base_color: Color::WHITE,
         unlit: true,
         ..default()
     });
@@ -126,7 +126,7 @@ pub fn create_height_map(
         ..default()
     });
 
-    // //Main pass plane, with material containing the rendered first pass texture.
+    //Main pass plane, with material containing the rendered first pass texture.
     // commands.spawn((
     //     PbrBundle {
     //         mesh: plane_handle,

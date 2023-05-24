@@ -1,13 +1,7 @@
 use bevy::{
     math::Vec4Swizzles,
     prelude::*,
-    render::{
-        mesh::Indices,
-        render_resource::{
-            Extent3d, PrimitiveTopology, TextureDescriptor, TextureDimension, TextureFormat,
-            TextureUsages,
-        },
-    },
+    render::{color::Color, mesh::Indices, render_resource::PrimitiveTopology},
 };
 
 use crate::components::*;
@@ -21,7 +15,7 @@ pub const TERRAIN_OFFSET: f32 = 25.; // how much the terrain extends past track
 
 // track to terrain blending parameters
 pub const TRANSITION_WIDTH: f32 = 5.;
-pub const TRANS_RAD_SUB_MAX_LEN: f32 = 0.25;
+pub const TRANS_RAD_SUB_MAX_LEN: f32 = 1.;
 
 // this will be replaced by a UI
 pub fn create_track_list(
@@ -178,7 +172,7 @@ pub fn track_mesh_2d(
     let num_arc_nodes = (length / ARC_SUB_MAX_LEN).ceil() as u32;
     let num_rad_nodes = (track.width / RAD_SUB_MAX_LEN).ceil() as u32;
     // number of transition nodes at edge of track width
-    let num_trans_nodes = (TRANSITION_WIDTH / TRANS_RAD_SUB_MAX_LEN).ceil() as u32;
+    let num_trans_nodes = (TRANSITION_WIDTH / TRANS_RAD_SUB_MAX_LEN).ceil() as u32 + 1;
 
     let total_rad_nodes = num_rad_nodes + 2 * num_trans_nodes - 2;
 
@@ -241,11 +235,14 @@ pub fn track_mesh_2d(
             let n: Vec3 = n.xyz();
 
             // define colors
-            let c = Vec4::new(vertex_color, vertex_color, vertex_color, 1.);
+            //let c = Vec4::new(vertex_color, vertex_color, vertex_color, 1.);
+            //let c = Color::rgb(vertex_color, vertex_color, vertex_color);
+            //let c = Color::rgb(1.0, 0.0, 1.0);
+            let c = Color::rgb(vertex_color, 0., 0.);
 
             positions.push(p);
             normals.push(n);
-            colors.push(c);
+            colors.push(c.as_rgba_f32());
 
             // define indices
             if curr_arc_node < (num_arc_nodes - 1) && curr_rad_node < (total_rad_nodes - 1) {

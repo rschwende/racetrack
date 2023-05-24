@@ -111,13 +111,14 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     var z = texture_color[1];
     var n = vec3<f32>(0., 0., 1.);
 
-    if texture_color[0] > 0.1 {
+    if texture_color[0] > 0.0 {
 
-        z = z_height(p, noise_params);
-        let z_west = z_height(p_west, noise_params);
-        let z_east = z_height(p_east, noise_params);
-        let z_north = z_height(p_north, noise_params);
-        let z_south = z_height(p_south, noise_params);
+        // terrain height
+        z = z_height(p, noise_params) * texture_color[0];
+        let z_west = z_height(p_west, noise_params) * texture_color[0];
+        let z_east = z_height(p_east, noise_params) * texture_color[0];
+        let z_north = z_height(p_north, noise_params) * texture_color[0];
+        let z_south = z_height(p_south, noise_params) * texture_color[0];
 
         // define normals
         let stangent = vec3<f32>(2. * delta, 0., z_east - z_west);
