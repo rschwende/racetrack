@@ -11,7 +11,7 @@ mod systems;
 use components::*;
 use systems::*;
 
-use camera::CameraPlugin;
+// use camera::CameraPlugin;
 use terrain::TerrainPlugin;
 //use tools::ToolsPlugin;
 use track::TrackPlugin;
@@ -19,6 +19,8 @@ use track_height_map::TrackHeightMapPlugin;
 use ui::UIPlugin;
 
 use bevy::prelude::*;
+use bevy_rigid_body::car::plugin::{CarPlugin, Mode};
+
 // need to work on this: use bevy_fly_camera::{FlyCamera, FlyCameraPlugin};
 
 fn main() {
@@ -28,10 +30,16 @@ fn main() {
         .init_resource::<TrackResource>()
         .init_resource::<MeshResource>()
         .add_startup_system(set_global_resource)
-        .add_plugin(CameraPlugin)
+        // .add_plugin(CameraPlugin)
         .add_plugin(TrackPlugin)
         .add_plugin(TrackHeightMapPlugin)
         .add_plugin(TerrainPlugin)
         .add_plugin(UIPlugin)
+        .add_plugin(CarPlugin {
+            mode: Mode::None,
+            time_step: 0.002, // 0.002 -> 500 fps
+            camera: true,
+            environment: false,
+        })
         .run();
 }

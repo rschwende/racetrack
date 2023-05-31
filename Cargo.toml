@@ -10,5 +10,13 @@ bevy = "0.10.0"
 bevy_fly_camera = "0.10.0"
 noisy_bevy = "0.3.0"
 bevy_egui = "0.20"
+bevy_rigid_body = { path = "../bevy_rigid_body" }
 
 
+# Enable only a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable max optimizations for dependencies, but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
