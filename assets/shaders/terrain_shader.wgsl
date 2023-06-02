@@ -100,7 +100,7 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     var out: VertexOutput;
 
     // deltas
-    let xy_delta = 0.01;
+    let xy_delta = 0.05;
     let u_delta = xy_delta / (noise_params.x_max - noise_params.x_min);
     let v_delta = xy_delta / (noise_params.y_max - noise_params.y_min);
 
@@ -259,6 +259,8 @@ fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
     // bring in params from Terrain Material to Standard Material in order
     // to use pbr shader pipeline
     var material = standard_material_new();
+    material.perceptual_roughness = 0.8;
+    material.metallic = 0.0;
 
     // textures
     let track_texture_uv = in.uv * vec2<f32>(noise_params.track_texture_scale, noise_params.track_texture_scale);
@@ -272,7 +274,9 @@ fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
     } else {
         if map_color[0] < 0.01 {
             material.base_color = track_color;
-        } else {};
+        } else {
+            material.base_color = vec4<f32>(0., 0.3, 0., 1.);
+        };
     }
 
 

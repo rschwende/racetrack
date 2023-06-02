@@ -11,6 +11,7 @@ use bevy::render::view::RenderLayers;
 use bevy::window::PrimaryWindow;
 
 use crate::components::*;
+use crate::track_height_map::components::*;
 
 pub fn create_height_map(
     mut commands: Commands,
@@ -21,6 +22,7 @@ pub fn create_height_map(
     mut global_resource: ResMut<GlobalResource>,
     mut track_resource: ResMut<TrackResource>,
     mut mesh_resource: ResMut<MeshResource>,
+    mut texture_material_asset: ResMut<Assets<TextureMaterial>>,
 ) {
     // position
     let quad_size = Vec2::new(
@@ -35,8 +37,8 @@ pub fn create_height_map(
 
     // texture size
     let size = Extent3d {
-        width: 1024,
-        height: 1024,
+        width: 2048,
+        height: 2048,
         ..default()
     };
 
@@ -90,11 +92,7 @@ pub fn create_height_map(
         first_pass_layer,
     ));
 
-    let track_material_handle = materials.add(StandardMaterial {
-        base_color: Color::WHITE,
-        unlit: true,
-        ..default()
-    });
+    let texture_material = TextureMaterial {};
 
     for (mesh_handle, transform) in mesh_resource
         .track_mesh_list
@@ -102,9 +100,9 @@ pub fn create_height_map(
         .zip(mesh_resource.track_mesh_transform_list.iter())
     {
         commands.spawn((
-            PbrBundle {
+            MaterialMeshBundle {
                 mesh: mesh_handle.clone(),
-                material: track_material_handle.clone(),
+                material: texture_material_asset.add(texture_material.clone()),
                 transform: *transform,
                 ..default()
             },

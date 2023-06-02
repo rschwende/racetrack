@@ -233,7 +233,6 @@ pub fn track_mesh_2d(
 
         let mut curr_width: f32;
         let mut vertex_color_red: f32; // represents track to terrain blend
-        let mut vertex_color_green: f32; // represents height of the t
 
         for curr_rad_node in 0..total_rad_nodes {
             // -Y transition zone

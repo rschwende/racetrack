@@ -6,8 +6,8 @@ use bevy::{
 use crate::components::*;
 use crate::terrain::components::*;
 
-pub const Y_SUB_MAX_LEN: f32 = 0.1;
-pub const X_SUB_MAX_LEN: f32 = 0.1;
+pub const Y_SUB_MAX_LEN: f32 = 0.3;
+pub const X_SUB_MAX_LEN: f32 = 0.3;
 
 pub fn spawn_terrain(
     global_resource: ResMut<GlobalResource>,

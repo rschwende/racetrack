@@ -1,0 +1,97 @@
+// Same imports as <https://github.com/bevyengine/bevy/blob/main/crates/bevy_pbr/src/render/pbr.wgsl>
+// vertex shader
+#import bevy_pbr::mesh_view_bindings
+#import bevy_pbr::mesh_functions
+#import bevy_pbr::mesh_bindings
+
+// fragment shader
+#import bevy_pbr::pbr_bindings
+#import bevy_pbr::utils
+#import bevy_pbr::clustered_forward
+#import bevy_pbr::lighting
+#import bevy_pbr::pbr_ambient
+#import bevy_pbr::shadows
+#import bevy_pbr::fog
+#import bevy_pbr::pbr_functions
+
+// vertex structs copied from bevy_pbr/src/render/mesh.wgsl
+struct Vertex {
+#ifdef VERTEX_POSITIONS
+    @location(0) position: vec3<f32>,
+#endif
+#ifdef VERTEX_NORMALS
+    @location(1) normal: vec3<f32>,
+#endif
+#ifdef VERTEX_UVS
+    @location(2) uv: vec2<f32>,
+#endif
+#ifdef VERTEX_TANGENTS
+    @location(3) tangent: vec4<f32>,
+#endif
+#ifdef VERTEX_COLORS
+    @location(4) color: vec4<f32>,
+#endif
+#ifdef SKINNED
+    @location(5) joint_indices: vec4<u32>,
+    @location(6) joint_weights: vec4<f32>,
+#endif
+};
+
+struct VertexOutput {
+    @builtin(position) clip_position: vec4<f32>,
+    #import bevy_pbr::mesh_vertex_output
+};
+
+// fragment struct copied from bevy_pbr/src/render/pbr.wgsl
+struct FragmentInput {
+    @builtin(front_facing) is_front: bool,
+    @builtin(position) frag_coord: vec4<f32>,
+    #import bevy_pbr::mesh_vertex_output
+}
+
+// vertex shader copied from bevy_pbr/src/render/mesh.wgsl
+@vertex
+fn vertex(vertex: Vertex) -> VertexOutput {
+    var out: VertexOutput;
+
+#ifdef SKINNED
+    var model = skin_model(vertex.joint_indices, vertex.joint_weights);
+#else
+    var model = mesh.model;
+#endif
+
+#ifdef VERTEX_NORMALS
+#ifdef SKINNED
+    out.world_normal = skin_normals(model, vertex.normal);
+#else
+    out.world_normal = mesh_normal_local_to_world(vertex.normal);
+#endif
+#endif
+
+#ifdef VERTEX_POSITIONS
+    out.world_position = mesh_position_local_to_world(model, vec4<f32>(vertex.position, 1.0));
+    out.clip_position = mesh_position_world_to_clip(out.world_position);
+#endif
+
+#ifdef VERTEX_UVS
+    out.uv = vertex.uv;
+#endif
+
+#ifdef VERTEX_TANGENTS
+    out.world_tangent = mesh_tangent_local_to_world(model, vertex.tangent);
+#endif
+
+#ifdef VERTEX_COLORS
+    out.color = vertex.color;
+#endif
+
+    return out;
+}
+
+@fragment
+fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
+
+    let output_color = vec4(in.color);
+
+    return output_color;
+}
