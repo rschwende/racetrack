@@ -23,12 +23,18 @@ struct NoiseParams {
     octaves: i32,
     lacunarity: f32,
     gain: f32,
+    scale: f32,
 
     x_min: f32,
     x_max: f32,
     y_min: f32,
     y_max: f32,
-};
+    max_track_ht: f32,
+    min_track_ht: f32,
+    show_track_map: i32,
+    track_texture_scale: f32,
+    terrain_texture_scale: f32,
+    };
 
 struct MaterialParams {
     base_color: vec4<f32>,
@@ -39,9 +45,13 @@ var<uniform> material_params: MaterialParams;
 @group(1) @binding(1)
 var<uniform> noise_params: NoiseParams;
 @group(1) @binding(2)
-var texture: texture_2d<f32>;
+var track_map: texture_2d<f32>;
 @group(1) @binding(3)
-var texture_sampler: sampler;
+var track_map_sampler: sampler;
+@group(1) @binding(4)
+var track_texture: texture_2d<f32>;
+@group(1) @binding(5)
+var track_sampler: sampler;
 
 // vertex structs copied from bevy_pbr/src/render/mesh.wgsl
 struct Vertex {
@@ -89,15 +99,42 @@ fn z_height(p: vec2<f32>, noise_params: NoiseParams) -> f32 {
 fn vertex(vertex: Vertex) -> VertexOutput {
     var out: VertexOutput;
 
-    let texture_color = textureSampleLevel(texture, texture_sampler, vertex.uv, 0.);
+    // deltas
+    let xy_delta = 0.01;
+    let u_delta = xy_delta / (noise_params.x_max - noise_params.x_min);
+    let v_delta = xy_delta / (noise_params.y_max - noise_params.y_min);
 
-    let delta = 0.01;
+    // xy offsets
+    let y_north = vertex.position.y + xy_delta;
+    let y_south = vertex.position.y - xy_delta;
 
-    let y_north = vertex.position.y + delta;
-    let y_south = vertex.position.y - delta;
+    let x_west = vertex.position.x - xy_delta;
+    let x_east = vertex.position.x + xy_delta;
 
-    let x_west = vertex.position.x - delta;
-    let x_east = vertex.position.x + delta;
+    // uv offsets
+    let v_north = vertex.uv.y + v_delta; 
+    let v_south = vertex.uv.y - v_delta;
+    let u_east = vertex.uv.x + u_delta;
+    let u_west = vertex.uv.x - u_delta;
+
+    // uv
+    let uv_north = vec2<f32>(vertex.uv.x, v_north);
+    let uv_south = vec2<f32>(vertex.uv.x, v_south);
+    let uv_east = vec2<f32>(u_east, vertex.uv.y);
+    let uv_west = vec2<f32>(u_west, vertex.uv.y);
+
+    // texture lookups
+    // let texture_color = textureSampleLevel(track_map, track_map_sampler, vertex.uv, 0.);
+    // let texture_color_north = textureSampleLevel(track_map, track_map_sampler, uv_north, 0.);
+    // let texture_color_south = textureSampleLevel(track_map, track_map_sampler, uv_south, 0.);
+    // let texture_color_east = textureSampleLevel(track_map, track_map_sampler, uv_east, 0.);
+    // let texture_color_west = textureSampleLevel(track_map, track_map_sampler, uv_west, 0.);
+
+    let texture_color = textureSampleLevel(track_map, track_map_sampler, vertex.uv, 1.);
+    let texture_color_north = textureSampleLevel(track_map, track_map_sampler, uv_north, 1.);
+    let texture_color_south = textureSampleLevel(track_map, track_map_sampler, uv_south, 1.);
+    let texture_color_east = textureSampleLevel(track_map, track_map_sampler, uv_east, 1.);
+    let texture_color_west = textureSampleLevel(track_map, track_map_sampler, uv_west, 1.);
 
     // X & Y positions for noise
     let p = vec2<f32>(vertex.position.x, vertex.position.y);
@@ -106,26 +143,40 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     let p_north = vec2<f32>(vertex.position.x, y_north);
     let p_south = vec2<f32>(vertex.position.x, y_south);
 
-    // // Z height from noise
+    // z height from track height
+    let z_track = (texture_color[1] * (noise_params.max_track_ht - noise_params.min_track_ht) + noise_params.min_track_ht) * (1. - texture_color[0]);
+    let z_track_north = (texture_color_north[1] * (noise_params.max_track_ht - noise_params.min_track_ht) + noise_params.min_track_ht) * (1. - texture_color[0]);
+    let z_track_south = (texture_color_south[1] * (noise_params.max_track_ht - noise_params.min_track_ht) + noise_params.min_track_ht) * (1. - texture_color[0]);
+    let z_track_east = (texture_color_east[1] * (noise_params.max_track_ht - noise_params.min_track_ht) + noise_params.min_track_ht) * (1. - texture_color[0]);
+    let z_track_west = (texture_color_west[1] * (noise_params.max_track_ht - noise_params.min_track_ht) + noise_params.min_track_ht) * (1. - texture_color[0]);
 
-    var z = texture_color[1];
-    var n = vec3<f32>(0., 0., 1.);
+    // let z_track_north = z_track;
+    // let z_track_south = z_track;
+    // let z_track_east = z_track;
+    // let z_track_west = z_track;
 
-    if texture_color[0] > 0.0 {
+    // z height from noise
+    let z_terrain = z_height(p, noise_params) * texture_color[0];
+    let z_terrain_north = z_height(p_north, noise_params) * texture_color[0];
+    let z_terrain_south = z_height(p_south, noise_params) * texture_color[0];
+    let z_terrain_east = z_height(p_east, noise_params) * texture_color[0];
+    let z_terrain_west = z_height(p_west, noise_params) * texture_color[0];
 
-        // terrain height
-        z = z_height(p, noise_params) * texture_color[0];
-        let z_west = z_height(p_west, noise_params) * texture_color[0];
-        let z_east = z_height(p_east, noise_params) * texture_color[0];
-        let z_north = z_height(p_north, noise_params) * texture_color[0];
-        let z_south = z_height(p_south, noise_params) * texture_color[0];
+    // z total height
 
-        // define normals
-        let stangent = vec3<f32>(2. * delta, 0., z_east - z_west);
-        let ttangent = vec3<f32>(0., 2. * delta, z_north - z_south);
+    let z = z_track + z_terrain;
+    let z_north = z_track_north + z_terrain_north;
+    let z_south = z_track_south + z_terrain_south;
+    let z_east = z_track_east + z_terrain_east;
+    let z_west = z_track_west + z_terrain_west;
 
-        n = vec3<f32>(cross(stangent, ttangent));
-    };
+
+
+    // define normals
+    let stangent = vec3<f32>(2. * xy_delta, 0., z_east - z_west);
+    let ttangent = vec3<f32>(0., 2. * xy_delta, z_north - z_south);
+
+    let n = vec3<f32>(cross(stangent, ttangent));
 
     // adapted from bevy_pbr/src/render/mesh.wgsl
     #ifdef SKINNED
@@ -209,9 +260,24 @@ fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
     // to use pbr shader pipeline
     var material = standard_material_new();
 
+    // textures
+    let track_texture_uv = in.uv * vec2<f32>(noise_params.track_texture_scale, noise_params.track_texture_scale);
+    let map_color = textureSample(track_map, track_map_sampler, in.uv);
+    let track_color = textureSample(track_texture, track_sampler, track_texture_uv);
+
+
     // set material parameters from Terrain Material Uniforms
+    if noise_params.show_track_map == 1 {
+        material.base_color = map_color;
+    } else {
+        if map_color[0] < 0.01 {
+            material.base_color = track_color;
+        } else {};
+    }
+
+
     //material.perceptual_roughness = 1.0;
-    material.base_color = textureSample(texture, texture_sampler, in.uv);
+    //material.base_color = track_color;
     //let baseColor = textureSample(texture, texture_sampler, in.uv);
     //material.unlit = false;
 

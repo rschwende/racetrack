@@ -39,6 +39,31 @@ pub fn ui_example_system(
                 egui::Slider::new(&mut global_resource.lacunarity, 0.0..=1.0).text("Lacunarity"),
             );
             ui.add(egui::Slider::new(&mut global_resource.gain, 0.0..=1.0).text("Gain"));
+            ui.add(egui::Slider::new(&mut global_resource.scale, 0.1..=100.).text("Scale"));
+            ui.add(
+                egui::Slider::new(&mut global_resource.track_texture_scale, 0.5..=5.)
+                    .text("Track Texture Scale"),
+            );
+            ui.add(
+                egui::Slider::new(&mut global_resource.terrain_texture_scale, 0.5..=5.)
+                    .text("Terrain Texture Scale"),
+            );
+            ui.add(egui::Checkbox::new(
+                &mut global_resource.show_track,
+                "Show Track",
+            ));
+            ui.add(egui::Checkbox::new(
+                &mut global_resource.show_track_texture,
+                "Show Track Texture",
+            ));
+            ui.add(egui::Checkbox::new(
+                &mut global_resource.show_terrain,
+                "Show Terrain",
+            ));
+            ui.add(egui::Checkbox::new(
+                &mut global_resource.show_track_map,
+                "Show Track Map on Terrain",
+            ));
 
             let print_button = ui.button("Print Variables").clicked();
 
@@ -47,14 +72,11 @@ pub fn ui_example_system(
             }
         });
 
-    occupied_screen_space.bottom = egui::TopBottomPanel::bottom("bottom_panel")
-        .resizable(true)
+    egui::SidePanel::left("left_panel")
+        .default_width(800.0)
         .show(ctx, |ui| {
-            ui.allocate_rect(ui.available_rect_before_wrap(), egui::Sense::hover());
-        })
-        .response
-        .rect
-        .height();
+            ui.heading("Track List");
+        });
 }
 
 fn print_vars(global_resource: ResMut<GlobalResource>) {

@@ -6,8 +6,8 @@ use bevy::{
 use crate::components::*;
 use crate::terrain::components::*;
 
-pub const Y_SUB_MAX_LEN: f32 = 0.05;
-pub const X_SUB_MAX_LEN: f32 = 0.05;
+pub const Y_SUB_MAX_LEN: f32 = 0.1;
+pub const X_SUB_MAX_LEN: f32 = 0.1;
 
 pub fn spawn_terrain(
     global_resource: ResMut<GlobalResource>,
@@ -24,7 +24,8 @@ pub fn spawn_terrain(
             base_color: Color::rgb(1.0, 0.0, 0.0),
         },
         noise_params: NoiseParams::new(&global_resource),
-        track_image: track_resource.track_texture_image_handle.clone(),
+        track_image: track_resource.track_map_image_handle.clone(),
+        track_texture: track_resource.track_texture_handle.clone(),
     };
 
     // create mesh
@@ -32,11 +33,15 @@ pub fn spawn_terrain(
     terrain_mesh(&global_resource, &mut mesh);
 
     // spawn mesh
-    commands.spawn(MaterialMeshBundle {
-        mesh: mesh_assets.add(mesh),
-        material: terrain_material_asset.add(terrain),
-        ..default()
-    });
+    commands.spawn((
+        MaterialMeshBundle {
+            mesh: mesh_assets.add(mesh),
+            material: terrain_material_asset.add(terrain),
+            visibility: Visibility::Visible,
+            ..default()
+        },
+        TerrainElement,
+    ));
 
     // test cube
     commands.spawn(PbrBundle {

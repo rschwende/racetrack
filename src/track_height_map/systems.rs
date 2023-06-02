@@ -126,16 +126,16 @@ pub fn create_height_map(
         ..default()
     });
 
-    //Main pass plane, with material containing the rendered first pass texture.
-    // commands.spawn((
-    //     PbrBundle {
-    //         mesh: plane_handle,
-    //         material: material_handle,
-    //         transform: Transform::from_xyz(quad_center.x, quad_center.y, 0.0),
-    //         ..default()
-    //     },
-    //     TestPass,
-    // ));
+    // Main pass plane, with material containing the rendered first pass texture.
+    commands.spawn((
+        PbrBundle {
+            mesh: plane_handle,
+            material: material_handle,
+            transform: Transform::from_xyz(quad_center.x, quad_center.y, 0.0),
+            ..default()
+        },
+        PlaneElement,
+    ));
 
-    track_resource.track_texture_image_handle = image_handle.clone();
+    track_resource.track_map_image_handle = image_handle.clone();
 }
