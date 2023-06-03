@@ -18,11 +18,17 @@ pub struct NoiseParams {
     pub octaves: u32,
     pub lacunarity: f32,
     pub gain: f32,
+    pub scale: f32,
 
     pub x_min: f32,
     pub x_max: f32,
     pub y_min: f32,
     pub y_max: f32,
+    pub max_track_ht: f32,
+    pub min_track_ht: f32,
+    pub show_track_map: u32,
+    pub track_texture_scale: f32,
+    pub terrain_texture_scale: f32,
 }
 
 impl NoiseParams {
@@ -35,11 +41,17 @@ impl NoiseParams {
             octaves: global_resource.octaves as u32,
             lacunarity: global_resource.lacunarity,
             gain: global_resource.gain,
+            scale: global_resource.scale,
 
             x_min: global_resource.x_min,
             x_max: global_resource.x_max,
             y_min: global_resource.y_min,
             y_max: global_resource.y_max,
+            max_track_ht: global_resource.max_track_ht,
+            min_track_ht: global_resource.min_track_ht,
+            show_track_map: global_resource.show_track_map as u32,
+            track_texture_scale: global_resource.track_texture_scale,
+            terrain_texture_scale: global_resource.terrain_texture_scale,
         }
     }
 
@@ -90,6 +102,9 @@ pub struct TerrainMaterial {
     #[texture(2)]
     #[sampler(3)]
     pub track_image: Handle<Image>,
+    #[texture(4)]
+    #[sampler(5)]
+    pub track_texture: Handle<Image>,
 }
 
 impl Material for TerrainMaterial {
