@@ -6,8 +6,6 @@ use bevy::{
     },
 };
 
-use bevy::render::view::Visibility::*;
-
 use crate::components::*;
 
 pub const TERRAIN_OFFSET: f32 = 25.; // how much the terrain extends past track
@@ -102,4 +100,22 @@ pub fn set_visibility(
             }
         }
     }
+}
+
+pub fn despawn(commands: &mut Commands, query: &mut Query<Entity, With<MyEntity>>) {
+    for track in query {
+        commands.entity(track).despawn();
+    }
+}
+
+pub fn directional_light(mut commands: Commands) {
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance: 20000.,
+            shadows_enabled: false,
+            ..default()
+        },
+        transform: Transform::from_xyz(0., 0., 50.0),
+        ..default()
+    });
 }

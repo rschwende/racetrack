@@ -1,28 +1,45 @@
-use std::slice::Windows;
-
 use bevy::core_pipeline::clear_color::ClearColorConfig;
-use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::prelude::*;
-use bevy::render::camera::{Projection, RenderTarget, ScalingMode};
+use bevy::render::camera::{RenderTarget, ScalingMode};
 use bevy::render::render_resource::{
     Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
 };
 use bevy::render::view::RenderLayers;
-use bevy::window::PrimaryWindow;
 
 use crate::components::*;
 use crate::track_height_map::components::*;
 
-pub fn create_height_map(
+pub fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    window_query: Query<&Window, With<PrimaryWindow>>,
     mut images: ResMut<Assets<Image>>,
     mut global_resource: ResMut<GlobalResource>,
     mut track_resource: ResMut<TrackResource>,
     mut mesh_resource: ResMut<MeshResource>,
     mut texture_material_asset: ResMut<Assets<TextureMaterial>>,
+) {
+    create_height_map(
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        &mut images,
+        &mut global_resource,
+        &mut track_resource,
+        &mut mesh_resource,
+        &mut texture_material_asset,
+    );
+}
+
+pub fn create_height_map(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    images: &mut ResMut<Assets<Image>>,
+    global_resource: &mut ResMut<GlobalResource>,
+    track_resource: &mut ResMut<TrackResource>,
+    mesh_resource: &mut ResMut<MeshResource>,
+    texture_material_asset: &mut ResMut<Assets<TextureMaterial>>,
 ) {
     // position
     let quad_size = Vec2::new(
@@ -90,6 +107,7 @@ pub fn create_height_map(
             ..default()
         },
         first_pass_layer,
+        MyEntity,
     ));
 
     let texture_material = TextureMaterial {};
@@ -108,6 +126,7 @@ pub fn create_height_map(
             },
             RenderToTexturePass,
             first_pass_layer,
+            MyEntity,
         ));
     }
 
@@ -130,9 +149,11 @@ pub fn create_height_map(
             mesh: plane_handle,
             material: material_handle,
             transform: Transform::from_xyz(quad_center.x, quad_center.y, 0.0),
+            visibility: Visibility::Hidden,
             ..default()
         },
         PlaneElement,
+        MyEntity,
     ));
 
     track_resource.track_map_image_handle = image_handle.clone();
