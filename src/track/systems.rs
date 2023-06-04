@@ -8,7 +8,7 @@ use crate::{
     components::*,
     systems::{MAX_TRACK_HEIGHT, MIN_TRACK_HEIGHT},
 };
-use std::{convert::identity, f32::consts::PI};
+use std::f32::consts::PI;
 
 // track params
 pub const RAD_SUB_MAX_LEN: f32 = 0.3; // max subdivision radial delta (ft)
@@ -21,10 +21,7 @@ pub const TRANSITION_WIDTH: f32 = 5.;
 pub const TRANS_RAD_SUB_MAX_LEN: f32 = 1.;
 
 // this will be replaced by a UI
-pub fn create_track_list(
-    mut track_resource: ResMut<TrackResource>,
-    mut images: ResMut<Assets<Image>>,
-) {
+pub fn default_track_list(mut track_resource: ResMut<TrackResource>) {
     // list track elements below
 
     // track element 1
@@ -105,22 +102,45 @@ pub fn create_track_list(
     track_resource.track_list.push(track_element);
 }
 
-/// spawns track elements
-pub fn spawn_track(
+/// bevy system
+pub fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut global_resource: ResMut<GlobalResource>,
-    track_resource: Res<TrackResource>,
+    mut track_resource: ResMut<TrackResource>,
     mut mesh_resource: ResMut<MeshResource>,
 ) {
-    let mut prev_transform = Transform::IDENTITY;
+    spawn_track(
+        &mut commands,
+        &mut meshes,
+        &mut materials,
+        &mut global_resource,
+        &mut track_resource,
+        &mut mesh_resource,
+    );
+}
+
+/// spawns track elements
+pub fn spawn_track(
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    global_resource: &mut ResMut<GlobalResource>,
+    track_resource: &mut ResMut<TrackResource>,
+    mesh_resource: &mut ResMut<MeshResource>,
+) {
+    let mut prev_transform = Transform::from_translation(Vec3::new(0., -5., 0.));
 
     let track_material_handle = materials.add(StandardMaterial {
-        base_color: Color::rgb(1.0, 1.0, 1.0),
-        unlit: true,
+        base_color: Color::rgb(1., 1., 1.),
+        unlit: false,
         ..default()
     });
+
+    // clear each list each render
+    mesh_resource.track_mesh_list.clear();
+    mesh_resource.track_mesh_transform_list.clear();
 
     // iterate through track list, spawn to scene, and update track extent
     for track_element in &track_resource.track_list {
@@ -143,6 +163,7 @@ pub fn spawn_track(
                 ..default()
             },
             TrackElement,
+            MyEntity,
         ));
 
         prev_transform = prev_transform * new_transform;
@@ -166,16 +187,6 @@ pub fn spawn_track(
             global_resource.y_min = p.y - TERRAIN_OFFSET;
         }
     }
-
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
-            illuminance: 20000.,
-            shadows_enabled: false,
-            ..default()
-        },
-        transform: Transform::from_xyz(0., 0., 50.0),
-        ..default()
-    });
 }
 
 /// creates track element mesh in passed mesh and passed transform ends as start position of
@@ -280,7 +291,7 @@ pub fn track_mesh_2d(
 
             // define normals
             let n = Vec4::new(0., 0., 1., 1.);
-            let n: Vec3 = (arc_matrix * bank_matrix * n).xyz();
+            let n: Vec3 = ((arc_matrix * bank_matrix).inverse().transpose() * n).xyz();
 
             // define colors
             let c = Color::rgb(vertex_color_red, vertex_color_green, 0.);

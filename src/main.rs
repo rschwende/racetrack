@@ -13,13 +13,11 @@ use systems::*;
 
 use camera::CameraPlugin;
 use terrain::TerrainPlugin;
-//use tools::ToolsPlugin;
 use track::TrackPlugin;
 use track_height_map::TrackHeightMapPlugin;
 use ui::UIPlugin;
 
 use bevy::prelude::*;
-// need to work on this: use bevy_fly_camera::{FlyCamera, FlyCameraPlugin};
 
 fn main() {
     App::new()
@@ -27,6 +25,7 @@ fn main() {
         .init_resource::<GlobalResource>()
         .init_resource::<TrackResource>()
         .init_resource::<MeshResource>()
+        .add_startup_system(directional_light)
         .add_startup_system(set_global_resource)
         .add_startup_system(load_assets)
         .add_system(change_texture_mode)

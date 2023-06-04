@@ -20,12 +20,14 @@ pub struct GlobalResource {
     pub max_track_ht: f32,
     pub min_track_ht: f32,
 
+    // ui parameters
     pub show_track_map: bool,
     pub show_track: bool,
     pub show_track_texture: bool,
     pub show_terrain: bool,
     pub track_texture_scale: f32,
     pub terrain_texture_scale: f32,
+    pub highlighted_track_index: i32,
 }
 
 #[derive(Resource, Default)]
@@ -41,7 +43,7 @@ pub struct MeshResource {
     pub track_mesh_transform_list: Vec<Transform>,
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct TrackElement2D {
     pub curvature: f32,
     pub curve_angle: f32,
@@ -52,9 +54,11 @@ pub struct TrackElement2D {
 }
 
 // labels
+// for render to texture pass
 #[derive(Component)]
 pub struct RenderToTexturePass;
 
+// for visbility
 #[derive(Component)]
 pub struct TrackElement;
 
@@ -63,3 +67,7 @@ pub struct PlaneElement;
 
 #[derive(Component)]
 pub struct TerrainElement;
+
+// despawn
+#[derive(Component)]
+pub struct MyEntity;

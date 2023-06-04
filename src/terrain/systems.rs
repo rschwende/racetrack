@@ -9,14 +9,28 @@ use crate::terrain::components::*;
 pub const Y_SUB_MAX_LEN: f32 = 0.3;
 pub const X_SUB_MAX_LEN: f32 = 0.3;
 
-pub fn spawn_terrain(
-    global_resource: ResMut<GlobalResource>,
-    track_resource: Res<TrackResource>,
+pub fn setup(
+    mut global_resource: ResMut<GlobalResource>,
+    mut track_resource: ResMut<TrackResource>,
     mut commands: Commands,
     mut mesh_assets: ResMut<Assets<Mesh>>,
     mut terrain_material_asset: ResMut<Assets<TerrainMaterial>>,
-    mut material_asset: ResMut<Assets<StandardMaterial>>,
-    mut images: ResMut<Assets<Image>>,
+) {
+    spawn_terrain(
+        &mut global_resource,
+        &mut track_resource,
+        &mut commands,
+        &mut mesh_assets,
+        &mut terrain_material_asset,
+    );
+}
+
+pub fn spawn_terrain(
+    global_resource: &mut ResMut<GlobalResource>,
+    track_resource: &mut ResMut<TrackResource>,
+    commands: &mut Commands,
+    mesh_assets: &mut ResMut<Assets<Mesh>>,
+    terrain_material_asset: &mut ResMut<Assets<TerrainMaterial>>,
 ) {
     // create terrain material
     let terrain = TerrainMaterial {
@@ -41,15 +55,8 @@ pub fn spawn_terrain(
             ..default()
         },
         TerrainElement,
+        MyEntity,
     ));
-
-    // test cube
-    commands.spawn(PbrBundle {
-        mesh: mesh_assets.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: material_asset.add(Color::rgb(0.8, 0.7, 0.6).into()),
-        transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
-        ..default()
-    });
 }
 
 pub fn terrain_mesh(global_resource: &ResMut<GlobalResource>, mesh: &mut Mesh) -> bool {
@@ -85,7 +92,7 @@ pub fn terrain_mesh(global_resource: &ResMut<GlobalResource>, mesh: &mut Mesh) -
             // define texture coordinates
             let uv = Vec2::new(
                 x_node as f32 / num_x_nodes as f32,
-                y_node as f32 / num_y_nodes as f32,
+                1. - (y_node as f32 / num_y_nodes as f32),
             );
 
             positions.push(p);
@@ -118,11 +125,11 @@ pub fn terrain_mesh(global_resource: &ResMut<GlobalResource>, mesh: &mut Mesh) -
 // update noise parameters of Terrain Material to global state
 pub fn update_noise_params(
     global_resource: ResMut<GlobalResource>,
-    material_query: Query<(Entity, &Handle<TerrainMaterial>)>,
+    material_query: Query<&Handle<TerrainMaterial>>,
     mut terrain_material_asset: ResMut<Assets<TerrainMaterial>>,
 ) {
-    let (_id, mat_handle) = material_query.get_single().unwrap();
-    let material = terrain_material_asset.get_mut(mat_handle).unwrap();
-
-    material.noise_params = NoiseParams::new(&global_resource);
+    if let Ok(mat_handle) = material_query.get_single() {
+        let material = terrain_material_asset.get_mut(mat_handle).unwrap();
+        material.noise_params = NoiseParams::new(&global_resource);
+    }
 }

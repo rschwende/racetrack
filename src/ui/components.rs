@@ -2,6 +2,8 @@
 
 use bevy::prelude::*;
 
+use crate::components::TrackElement2D;
+
 #[derive(Default, Resource)]
 pub struct OccupiedScreenSpace {
     pub left: f32,
@@ -13,19 +15,8 @@ pub struct OccupiedScreenSpace {
 #[derive(Resource, Deref, DerefMut)]
 pub struct OriginalCameraTransform(pub Transform);
 
-#[derive(Default, Resource)]
-pub struct UiState {
-
-    // terrain parameters
-    pub frequency_scale: f32,
-    pub amplitude_scale: f32,
-    pub octaves: f32,
-    pub lacunarity: f32,
-    pub gain: f32,
-
-
-    // other
-    pub label: String,
-    pub value: f32,
-    pub is_window_open: bool,
+#[derive(Resource, Default)]
+pub struct UIResource {
+    pub new_track_element: TrackElement2D,
+    pub new_index: usize,
 }
