@@ -287,7 +287,7 @@ pub fn track_mesh_2d(
             let p: Vec3 = (arc_matrix * bank_matrix * p).xyz();
 
             let vertex_color_green =
-                (p.z - MIN_TRACK_HEIGHT) / (MAX_TRACK_HEIGHT - MIN_TRACK_HEIGHT);
+                10000. * (p.z - MIN_TRACK_HEIGHT) / (MAX_TRACK_HEIGHT - MIN_TRACK_HEIGHT);
 
             // define normals
             let n = Vec4::new(0., 0., 1., 1.);

@@ -144,11 +144,13 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     let p_south = vec2<f32>(vertex.position.x, y_south);
 
     // z height from track height
-    let z_track = (texture_color[1] * (noise_params.max_track_ht - noise_params.min_track_ht) + noise_params.min_track_ht) * (1. - texture_color[0]);
-    let z_track_north = (texture_color_north[1] * (noise_params.max_track_ht - noise_params.min_track_ht) + noise_params.min_track_ht) * (1. - texture_color[0]);
-    let z_track_south = (texture_color_south[1] * (noise_params.max_track_ht - noise_params.min_track_ht) + noise_params.min_track_ht) * (1. - texture_color[0]);
-    let z_track_east = (texture_color_east[1] * (noise_params.max_track_ht - noise_params.min_track_ht) + noise_params.min_track_ht) * (1. - texture_color[0]);
-    let z_track_west = (texture_color_west[1] * (noise_params.max_track_ht - noise_params.min_track_ht) + noise_params.min_track_ht) * (1. - texture_color[0]);
+    let gain = (noise_params.max_track_ht - noise_params.min_track_ht)/10000.0;
+    let offset = noise_params.min_track_ht;
+    let z_track = (texture_color[1] * gain + offset) * (1. - texture_color[0]) ;
+    let z_track_north = (texture_color_north[1] * gain) * (1. - texture_color[0]);
+    let z_track_south = (texture_color_south[1] * gain) * (1. - texture_color[0]);
+    let z_track_east = (texture_color_east[1] * gain) * (1. - texture_color[0]);
+    let z_track_west = (texture_color_west[1] * gain) * (1. - texture_color[0]);
 
     // let z_track_north = z_track;
     // let z_track_south = z_track;
