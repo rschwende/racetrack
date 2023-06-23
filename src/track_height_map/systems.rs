@@ -1,4 +1,5 @@
 use bevy::core_pipeline::clear_color::ClearColorConfig;
+use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::prelude::*;
 use bevy::render::camera::{RenderTarget, ScalingMode};
 use bevy::render::render_resource::{
@@ -91,8 +92,10 @@ pub fn create_height_map(
                 // render before the "main pass" camera
                 order: -1,
                 target: RenderTarget::Image(image_handle.clone()),
+                //hdr: true, // enable hdr
                 ..default()
             },
+            //tonemapping: Tonemapping::None, // disable tonemapping
             transform: Transform::from_translation(Vec3::new(quad_center.x, quad_center.y, 10.0))
                 .looking_at(Vec3::new(quad_center.x, quad_center.y, 0.0), Vec3::Y),
             projection: OrthographicProjection {

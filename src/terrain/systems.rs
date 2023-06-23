@@ -6,8 +6,8 @@ use bevy::{
 use crate::components::*;
 use crate::terrain::components::*;
 
-pub const Y_SUB_MAX_LEN: f32 = 0.3;
-pub const X_SUB_MAX_LEN: f32 = 0.3;
+pub const Y_SUB_MAX_LEN: f32 = 0.1;
+pub const X_SUB_MAX_LEN: f32 = 0.1;
 
 pub fn setup(
     mut global_resource: ResMut<GlobalResource>,
